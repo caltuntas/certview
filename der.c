@@ -1,5 +1,6 @@
 #include "der.h"
 
+//TODO:negative integers
 tlv_t parse_tlv(uint8_t *buf,size_t size)
 {
   uint8_t tag_byte = buf[0];
@@ -19,5 +20,6 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   } else {
     tlv.len =len;
   }
+  tlv.value=buf+(size-tlv.len);
 	return tlv;
 }
