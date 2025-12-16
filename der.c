@@ -12,15 +12,16 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   tlv_t tlv={0};
 	tlv.tag=tag;
   uint8_t len=buf[1];
+  uint8_t bytes=0;
   if(len > 128) {
-    uint8_t bytes = len & 0x0F;
+    bytes = len & 0x0F;
     for (int i=0;i<bytes; i++) {
       tlv.len |= buf[2+i] << (8-i*8);
     }
   } else {
     tlv.len =len;
   }
-  tlv.value=buf+(size-tlv.len);
+  tlv.value=buf+bytes+2;
 	return tlv;
 }
 
@@ -28,22 +29,31 @@ tlv_node_t* build_tlv(tlv_t tlv)
 {
   tlv_node_t* node=malloc(sizeof(*node));
   node->tlv=tlv;
+  size_t len=tlv.len;
+  uint8_t *value_ptr = tlv.value;
   if (tlv.tag.number == SEQUENCE) {
-    uint8_t *value_ptr = tlv.value;
-    size_t len=tlv.len;
     size_t count=node->count;
     while(value_ptr <= tlv.value+tlv.len-1) {
-      tlv_t child = parse_tlv(value_ptr,len);
       node->children=realloc(node->children,sizeof(tlv_node_t)*(node->count+1));
-      node->children[count].tlv.tag.class = child.tag.class;
-      node->children[count].tlv.tag.number = child.tag.number;
-      node->children[count].tlv.len= child.len;
-      node->children[count].tlv.value= value_ptr+child.len+1;
+      tlv_t child = parse_tlv(value_ptr,len);
+      tlv_node_t* childNode=build_tlv(child);
+      node->children[count].tlv.tag.class = childNode->tlv.tag.class;
+      node->children[count].tlv.tag.number = childNode->tlv.tag.number;
+      node->children[count].tlv.tag.type = childNode->tlv.tag.type;
+      node->children[count].tlv.len= childNode->tlv.len;
+      node->children[count].tlv.value= childNode->tlv.value;
+      node->children[count].children= childNode->children;
       value_ptr=node->children[count].tlv.value+node->children[count].tlv.len;
       len=child.len;
       count++;
       node->count=count;
     }
+  } else if (tlv.tag.number == INTEGER) {
+    node->tlv.tag.class = tlv.tag.class;
+    node->tlv.tag.number = tlv.tag.number;
+    node->tlv.tag.type = tlv.tag.type;
+    node->tlv.len= tlv.len;
+    node->tlv.value= tlv.value;
   }
   return node;
 }
