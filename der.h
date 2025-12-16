@@ -46,6 +46,14 @@ typedef struct {
   uint8_t *value;
 } tlv_t;
 
+
+typedef struct tlv_node_t {
+  tlv_t tlv;
+  struct tlv_node_t* children;
+  size_t count;
+} tlv_node_t;
+
 tlv_t parse_tlv(uint8_t *buf,size_t size);
+tlv_node_t* build_tlv(tlv_t tlv);
 
 #endif
