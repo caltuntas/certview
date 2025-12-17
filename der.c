@@ -21,7 +21,10 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   } else {
     tlv.len =len;
   }
-  tlv.value=buf+bytes+2;
+  if(tlv.len>0)
+    tlv.value=buf+bytes+2;
+  else 
+    tlv.value=NULL;
 	return tlv;
 }
 
@@ -33,7 +36,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
   uint8_t *value_ptr = tlv.value;
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
-    while(value_ptr <= tlv.value+tlv.len-1) {
+    while(value_ptr!=NULL && value_ptr <= tlv.value+tlv.len-1) {
       node->children=realloc(node->children,sizeof(tlv_node_t)*(node->count+1));
       tlv_t child = parse_tlv(value_ptr,len);
       tlv_node_t* childNode=build_tlv(child);

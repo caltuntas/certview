@@ -23,7 +23,7 @@ typedef enum {
   INTEGER=2 ,
   BIT_STRING=3  ,
   OCTET_STRING=4  ,
-  NULL_NUMBER=5  ,
+  NULL_VALUE=5  ,
   OBJECT_IDENTIFIER=6 ,
   UTF8String=12 ,
   SEQUENCE=16 ,
