@@ -107,6 +107,75 @@ static void test_build_tlv_nested_sequence(void)
   TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
 }
 
+static void test_build_tlv_nested_context_specific(void)
+{
+  uint8_t buf[]={0x30,0x08,0xA0,0x03,0x02,0x01,0x02,0x02,0x01,0x05};
+  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  tlv_node_t *root =build_tlv(actual);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->tlv.len,8);
+  TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
+  TEST_ASSERT_EQUAL_INT(root->count,2);
+
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,CONTEXT_SPECIFIC);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,0);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
+
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,(buf+9));
+}
+
+static void test_build_tlv_nested_oid(void)
+{
+  uint8_t buf[]={0x30,0x04,0x06,0x02,0x2A,0x03};
+  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  tlv_node_t *root =build_tlv(actual);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->tlv.len,4);
+  TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
+  TEST_ASSERT_EQUAL_INT(root->count,1);
+
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,2);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+}
+
+static void test_build_tlv_nested_oid_multi_byte(void)
+{
+  uint8_t buf[]={0x30,0x05,0x06,0x03,0x2A,0x86,0x48 };
+  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  tlv_node_t *root =build_tlv(actual);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->tlv.len,5);
+  TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
+  TEST_ASSERT_EQUAL_INT(root->count,1);
+
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -116,5 +185,8 @@ int main(void)
   RUN_TEST(test_parse_tlv_constructed);
   RUN_TEST(test_build_tlv_tree);
   RUN_TEST(test_build_tlv_nested_sequence);
+  RUN_TEST(test_build_tlv_nested_context_specific);
+  RUN_TEST(test_build_tlv_nested_oid);
+  RUN_TEST(test_build_tlv_nested_oid_multi_byte);
   return UNITY_END();
 }

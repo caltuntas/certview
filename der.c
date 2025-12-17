@@ -31,7 +31,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
   node->tlv=tlv;
   size_t len=tlv.len;
   uint8_t *value_ptr = tlv.value;
-  if (tlv.tag.number == SEQUENCE) {
+  if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
     while(value_ptr <= tlv.value+tlv.len-1) {
       node->children=realloc(node->children,sizeof(tlv_node_t)*(node->count+1));
@@ -48,7 +48,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
       count++;
       node->count=count;
     }
-  } else if (tlv.tag.number == INTEGER) {
+  } else if (tlv.tag.type == PRIMITIVE) {
     node->tlv.tag.class = tlv.tag.class;
     node->tlv.tag.number = tlv.tag.number;
     node->tlv.tag.type = tlv.tag.type;
