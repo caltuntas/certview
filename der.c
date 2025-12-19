@@ -16,7 +16,7 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   if(len > 128) {
     bytes = len & 0x0F;
     for (int i=0;i<bytes; i++) {
-      tlv.len |= buf[2+i] << (8-i*8);
+      tlv.len |= buf[2+i] << (8*(bytes-i-1));
     }
   } else {
     tlv.len =len;
@@ -25,6 +25,8 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
     tlv.value=buf+bytes+2;
   else 
     tlv.value=NULL;
+  tlv.len_meta=bytes;
+  tlv.ptr=buf;
 	return tlv;
 }
 
@@ -44,6 +46,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
       node->children[count].tlv.tag.number = childNode->tlv.tag.number;
       node->children[count].tlv.tag.type = childNode->tlv.tag.type;
       node->children[count].tlv.len= childNode->tlv.len;
+      node->children[count].tlv.len_meta= childNode->tlv.len_meta;
       node->children[count].tlv.value= childNode->tlv.value;
       node->children[count].children= childNode->children;
       node->children[count].count= childNode->count;

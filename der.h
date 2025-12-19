@@ -4,35 +4,62 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define ENUM_ENTRY(name,value) name = value,
+#define ENUM_DECLARE(MACRO_DEFINITION,enum_name)\
+  typedef enum\
+  {\
+    MACRO_DEFINITION(ENUM_ENTRY)\
+  }\
+  enum_name;
+
+#define ENUM_TOSTRING_CASE(name,value) case name: return #name;
+#define ENUM_DEFINE_TO_STRING(MACRO_DEFINITION,enum_name)\
+  static inline const char* enum_name##_toString(enum_name value)\
+  {\
+    switch(value)\
+    {\
+      MACRO_DEFINITION(ENUM_TOSTRING_CASE)\
+      default:\
+        return 0;\
+    }\
+  }\
+
+
 //https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/
 //https://luca.ntop.org/Teaching/Appunti/asn1.html
-typedef enum {
-  UNIVERSAL =0, //00
-  APPLICATION=1, //01
-  CONTEXT_SPECIFIC=2,//10
-  PRIVATE=3//11
-} class_t;
+#define ENUM_class(_)\
+  _(UNIVERSAL,0)\
+  _(APPLICATION,1)\
+  _(CONTEXT_SPECIFIC,2)\
+  _(PRIVATE,3)
 
+ENUM_DECLARE(ENUM_class, class_t)
+ENUM_DEFINE_TO_STRING(ENUM_class, class_t)
 
-typedef enum {
-  PRIMITIVE=0,
-  CONSTRUCTED=1
-} type_t;
+#define ENUM_type(_)\
+  _(PRIMITIVE,0)\
+  _(CONSTRUCTED,1)
 
-typedef enum {
-  INTEGER=2 ,
-  BIT_STRING=3  ,
-  OCTET_STRING=4  ,
-  NULL_VALUE=5  ,
-  OBJECT_IDENTIFIER=6 ,
-  UTF8String=12 ,
-  SEQUENCE=16 ,
-  SET=17 ,
-  PrintableString=19  ,
-  IA5String=22  ,
-  UTCTime=23  ,
-  GeneralizedTime=24
-} tag_number_t;
+ENUM_DECLARE(ENUM_type, type_t)
+ENUM_DEFINE_TO_STRING(ENUM_type, type_t)
+
+#define ENUM_tag_number(_)\
+  _(BOOLEAN,1 )\
+  _(INTEGER,2 )\
+  _(BIT_STRING,3  )\
+  _(OCTET_STRING,4  )\
+  _(NULL_VALUE,5  )\
+  _(OBJECT_IDENTIFIER,6 )\
+  _(UTF8String,12 )\
+  _(SEQUENCE,16 )\
+  _(SET,17 )\
+  _(PrintableString,19  )\
+  _(IA5String,22  )\
+  _(UTCTime,23  )\
+  _(GeneralizedTime,24)
+
+ENUM_DECLARE(ENUM_tag_number, tag_number_t)
+ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 
 typedef struct {
   class_t class;
@@ -43,7 +70,9 @@ typedef struct {
 typedef struct {
   tag_t tag;
   uint32_t len;
+  uint32_t len_meta;
   uint8_t *value;
+  uint8_t *ptr;
 } tlv_t;
 
 
