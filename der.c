@@ -50,7 +50,10 @@ tlv_node_t* build_tlv(tlv_t tlv)
       node->children[count].tlv.value= childNode->tlv.value;
       node->children[count].children= childNode->children;
       node->children[count].count= childNode->count;
-      value_ptr=node->children[count].tlv.value+node->children[count].tlv.len;
+      if(childNode->tlv.value==NULL)
+        value_ptr=value_ptr+2;
+      else
+        value_ptr=node->children[count].tlv.value+node->children[count].tlv.len;
       len=child.len;
       count++;
       node->count=count;

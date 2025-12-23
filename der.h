@@ -61,6 +61,11 @@ ENUM_DEFINE_TO_STRING(ENUM_type, type_t)
 ENUM_DECLARE(ENUM_tag_number, tag_number_t)
 ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 
+typedef enum {
+  ANY,
+  CHOICE
+} semantic_type_t;
+
 typedef struct {
   class_t class;
   type_t type;
