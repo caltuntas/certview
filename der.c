@@ -26,7 +26,6 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   else 
     tlv.value=NULL;
   tlv.len_meta=bytes;
-  tlv.ptr=buf;
 	return tlv;
 }
 

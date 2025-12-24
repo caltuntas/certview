@@ -77,7 +77,6 @@ typedef struct {
   uint32_t len;
   uint32_t len_meta;
   uint8_t *value;
-  uint8_t *ptr;
 } tlv_t;
 
 

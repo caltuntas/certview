@@ -371,6 +371,27 @@ static void test_build_tlv_octet_string(void)
   TEST_ASSERT_EQUAL_INT(root->children[1].count,0);
 }
 
+static void test_build_tlv_constructed(void)
+{
+  uint8_t buf[]={0xA0,0x03,0x02,0x01,0x02};
+  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  tlv_node_t *root =build_tlv(actual);
+
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.class,CONTEXT_SPECIFIC);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.number,0);
+  TEST_ASSERT_EQUAL_INT(root->tlv.len,3);
+  TEST_ASSERT_EQUAL_INT(root->count,1);
+  TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
+
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,1);
+  TEST_ASSERT_EQUAL_INT(root->children[0].count,0);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+}
+
 
 int main(void)
 {
@@ -392,5 +413,6 @@ int main(void)
   RUN_TEST(test_build_tlv_octet_string);
   RUN_TEST(test_parse_tlv_long_len_1);
   RUN_TEST(test_build_tlv_nested_multiple_null_types);
+  RUN_TEST(test_build_tlv_constructed);
   return UNITY_END();
 }
