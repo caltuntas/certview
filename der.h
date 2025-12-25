@@ -62,8 +62,8 @@ ENUM_DECLARE(ENUM_tag_number, tag_number_t)
 ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 
 typedef enum {
-  ANY,
-  CHOICE
+  ANY=888,
+  CHOICE=999
 } semantic_type_t;
 
 typedef struct {

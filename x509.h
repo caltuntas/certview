@@ -17,8 +17,9 @@ typedef enum encoding_type_t {
 typedef struct field_t {
 	char *name;
 	int value_type;
+	int element_type;
 	bool required;
-	struct field_t *children;
+	struct field_t **children;
 	size_t count;
 	match_type_t match_type;
   encoding_type_t encoding_type;

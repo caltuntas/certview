@@ -67,6 +67,17 @@ static void test_parse_tlv_constructed(void)
   TEST_ASSERT_EQUAL_PTR(actual.value,(buf+2));
 }
 
+static void test_parse_context_specific_primitive(void)
+{
+  uint8_t buf[]={0x80,0x01,0x02};
+  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  TEST_ASSERT_EQUAL_INT(actual.tag.class,CONTEXT_SPECIFIC);
+  TEST_ASSERT_EQUAL_INT(actual.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(actual.tag.number,0);
+  TEST_ASSERT_EQUAL_INT(actual.len,1);
+  TEST_ASSERT_EQUAL_PTR(actual.value,(buf+2));
+}
+
 static void test_parse_tlv_boolean(void)
 {
   uint8_t buf[]={0x01,0x01,0xFF};
@@ -414,5 +425,6 @@ int main(void)
   RUN_TEST(test_parse_tlv_long_len_1);
   RUN_TEST(test_build_tlv_nested_multiple_null_types);
   RUN_TEST(test_build_tlv_constructed);
+  RUN_TEST(test_parse_context_specific_primitive);
   return UNITY_END();
 }
