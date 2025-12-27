@@ -9,3 +9,4 @@ tests.out*
 .DS_Store
 certview
 *.asm
+debug

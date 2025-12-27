@@ -1,6 +1,8 @@
 #include "der.h"
 
 //TODO:negative integers
+//TODO:check tvl length and buffer size discrepancy
+//TODO:bit string parsing edge cases
 tlv_t parse_tlv(uint8_t *buf,size_t size)
 {
   uint8_t tag_byte = buf[0];
@@ -37,7 +39,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
   uint8_t *value_ptr = tlv.value;
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
-    while(value_ptr!=NULL && value_ptr <= tlv.value+tlv.len-1) {
+    while(value_ptr!=NULL && value_ptr < tlv.value+tlv.len-1) {
       node->children=realloc(node->children,sizeof(tlv_node_t)*(node->count+1));
       tlv_t child = parse_tlv(value_ptr,len);
       tlv_node_t* childNode=build_tlv(child);
@@ -49,7 +51,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
       node->children[count].tlv.value= childNode->tlv.value;
       node->children[count].children= childNode->children;
       node->children[count].count= childNode->count;
-      if(childNode->tlv.value==NULL)
+      if(childNode->tlv.value==NULL && childNode->tlv.len==0)
         value_ptr=value_ptr+2;
       else
         value_ptr=node->children[count].tlv.value+node->children[count].tlv.len;

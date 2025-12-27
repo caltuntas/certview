@@ -403,6 +403,48 @@ static void test_build_tlv_constructed(void)
   TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
 }
 
+static void test_build_tlv_rsa_encryption(void)
+{
+  uint8_t buf[] = {0x30,0x13,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,0x03,0x01,0x00,0x00};
+  
+  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  tlv_node_t *root = build_tlv(actual);
+  
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.type, CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->tlv.tag.number, SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->tlv.len, 19);
+  TEST_ASSERT_EQUAL_PTR(root->tlv.value, (buf + 2));
+  TEST_ASSERT_EQUAL_INT(root->count, 2);
+  
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type, CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number, SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len, 13);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value, (buf + 4));
+  TEST_ASSERT_EQUAL_INT(root->children[0].count, 2);
+  
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number, OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len, 9);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value, (buf + 6));
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].count, 0);
+  
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.number, NULL_VALUE);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.len, 0);
+  TEST_ASSERT_EQUAL_PTR(root->children[0].children[1].tlv.value, NULL);
+  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].count, 0);
+  
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number, BIT_STRING);
+  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len, 1);
+  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value, (buf + 19));
+  TEST_ASSERT_EQUAL_INT(root->children[1].count, 0);
+}
 
 int main(void)
 {
@@ -426,5 +468,6 @@ int main(void)
   RUN_TEST(test_build_tlv_nested_multiple_null_types);
   RUN_TEST(test_build_tlv_constructed);
   RUN_TEST(test_parse_context_specific_primitive);
+  RUN_TEST(test_build_tlv_rsa_encryption);
   return UNITY_END();
 }

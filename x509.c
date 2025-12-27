@@ -13,6 +13,8 @@ void add_field(field_t *parent, field_t *child)
 static bool match(field_t *f,tlv_node_t node)
 {
   tag_t t=node.tlv.tag;
+  if(f->value_type==ANY)
+    return true;
   if(f->value_type==CHOICE) {
     for (int i=0; i<f->count; i++) {
       field_t *option_field=f->children[i];
@@ -45,28 +47,29 @@ bool validate_asn1(field_t *parent,tlv_node_t *tlv)
 {
   if (tlv->count > parent->count)
     return false;
-  int tlvIndex=0;
-	for (int i=0; i<parent->count; i++) {
-		field_t *f=parent->children[i];
+  bool prev_match=true;
+  int tlv_index=0;
+  for (int i=0; i<parent->count; i++) {
+    field_t *f=parent->children[i];
     tag_t tag=tlv->children[i].tlv.tag;
-		if (f->match_type==POSITION) {
-      bool matches=match(f,tlv->children[i]);
-			if(f->required && matches==false) {
-					return false;
-			}
-		} else if(f->match_type==TAG) {
-      bool matches=match(f,tlv->children[i]);
-      if(matches==false) {
-        if(tlv->count==parent->count)
+    bool matches=match(f,tlv->children[tlv_index]);
+    if(matches==false) {
+      if(f->required)
+        return false;
+      else {
+        if(prev_match==false)
           return false;
-        if(f->has_default || !f->required) {
-          tlvIndex++;
-        }else {
-          return false;
+        if(f->has_default || f->required==false){
+          prev_match=matches;
+          continue;
         }
       }
     }
-	}
+    tlv_index++;
+    prev_match=matches;
+  }
+  if (tlv_index < tlv->count)
+    return false;
 	return true;
 }
 
