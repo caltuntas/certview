@@ -76,6 +76,17 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
   if ((field->encoding_type!=EXPLICIT && field->encoding_type!=IMPLICIT) && field->value_type!=t.number)
     return false;
 
+  if(field->value_type==SEQUENCE && field->element_type!=0) {
+    if(field->required && tlv->count<=0)
+      return false;
+    for (int i=0; i<tlv->count; i++) {
+      tlv_node_t item=tlv->children[i];
+      if (item.tlv.tag.number!=field->element_type)
+        return false;
+    }
+    return true;
+  }
+
   if (field->value_type==SEQUENCE) {
     bool prev_match=true;
     int tlv_index=0;

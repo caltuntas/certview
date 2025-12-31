@@ -402,7 +402,7 @@ static void test_validate_nested_fields()
 	field2.name="parameters";
 	field2.value_type=ANY;
 	field2.required=false;
-	field1.match_type=POSITION;
+	field2.match_type=POSITION;
 
   field_t parent_field={0};	
 	parent_field.name="SubjectPublicKeyInfo";
@@ -456,6 +456,33 @@ static void test_validate_nested_fields()
   }
 }
 
+static void test_validate_sequence_of()
+{
+  field_t parent = {0};
+  parent.name = "Numbers";
+  parent.value_type = SEQUENCE;
+  parent.required = true;
+  parent.element_type = INTEGER; // SEQUENCE OF INTEGER
+
+  test_case cases[] = {
+    CASE(true,0x30,0x09,0x02,0x01,0x01,0x02,0x01,0x02,0x02,0x01,0x03),
+    CASE(false,0x30,0x09,0x02,0x01,0x01,0x0C,0x01,'A',0x02,0x01,0x02),
+    CASE(false,0x30,0x00),
+    CASE(false,0x30,0x05,0x30,0x03,0x02,0x01,0x01),
+  };
+
+  int len = ARRAY_LEN(cases);
+  for (int i = 0; i < len; i++) {
+    test_case tc = cases[i];
+    tlv_t actual = parse_tlv(tc.data, tc.len);
+    tlv_node_t *root = build_tlv(actual);
+    char msg[40] = {0};
+    snprintf(msg, 20, "case=%d\n", i);
+    bool is_valid = validate_asn1(&parent, root);
+    TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
+  }
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -467,5 +494,6 @@ int main(void)
   RUN_TEST(test_validate_implicit);
   RUN_TEST(test_validate_choice);
   RUN_TEST(test_validate_nested_fields);
+  RUN_TEST(test_validate_sequence_of);
   return UNITY_END();
 }

@@ -39,6 +39,7 @@ void print_tlv_node(tlv_node_t *node,int indent)
 //TODO:negative integers
 //TODO:check tvl length and buffer size discrepancy
 //TODO:bit string parsing edge cases
+//TODO:check invalid encodings for instance integer cannot be constructed 
 tlv_t parse_tlv(uint8_t *buf,size_t size)
 {
   uint8_t tag_byte = buf[0];
