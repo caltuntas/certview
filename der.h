@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define ENUM_ENTRY(name,value) name = value,
 #define ENUM_DECLARE(MACRO_DEFINITION,enum_name)\
@@ -56,15 +57,12 @@ ENUM_DEFINE_TO_STRING(ENUM_type, type_t)
   _(PrintableString,19  )\
   _(IA5String,22  )\
   _(UTCTime,23  )\
-  _(GeneralizedTime,24)
+  _(GeneralizedTime,24)\
+  _(ANY,888)\
+  _(CHOICE,999)
 
 ENUM_DECLARE(ENUM_tag_number, tag_number_t)
 ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
-
-typedef enum {
-  ANY=888,
-  CHOICE=999
-} semantic_type_t;
 
 typedef struct {
   class_t class;
@@ -88,5 +86,6 @@ typedef struct tlv_node_t {
 
 tlv_t parse_tlv(uint8_t *buf,size_t size);
 tlv_node_t* build_tlv(tlv_t tlv);
+void print_tlv_node(tlv_node_t *node,int indent);
 
 #endif

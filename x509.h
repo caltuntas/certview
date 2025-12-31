@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include "der.h"
 
+#define REFERENCE_TYPE 777
+
 typedef enum match_type_t {
 	POSITION,
 	TAG
@@ -16,6 +18,7 @@ typedef enum encoding_type_t {
 
 typedef struct field_t {
 	char *name;
+	char *reference_type;
 	int value_type;
 	int element_type;
 	bool required;
@@ -28,6 +31,7 @@ typedef struct field_t {
   int tag_class;
 } field_t;
 
+void print_field(field_t *field,int indent);
 void add_field(field_t *parent, field_t *child);
 bool validate_asn1(field_t *parent,tlv_node_t *tlv);
 
