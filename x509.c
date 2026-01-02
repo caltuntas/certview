@@ -44,16 +44,13 @@ void print_field(field_t *field,int indent)
 
 bool validate_asn1(field_t *field,tlv_node_t *tlv)
 {
-  //if (tlv->count > field->count)
-    //return false;
-
   tag_t t=tlv->tlv.tag;
   if(field->value_type==ANY)
     return true;
   if(field->value_type==CHOICE) {
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
-      if (option_field->value_type==t.number)
+      if (validate_asn1(option_field,tlv))
         return true;
     }
     return false;
@@ -79,9 +76,10 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
   if(field->value_type==SEQUENCE && field->element_type!=0) {
     if(field->required && tlv->count<=0)
       return false;
+    field_t *item_field=field->children[0];
     for (int i=0; i<tlv->count; i++) {
       tlv_node_t item=tlv->children[i];
-      if (item.tlv.tag.number!=field->element_type)
+      if (validate_asn1(item_field,&item)==false)
         return false;
     }
     return true;

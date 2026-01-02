@@ -344,7 +344,13 @@ static void test_validate_choice()
 	option3.name="c";
 	option3.tag_class=UNIVERSAL;
 	option3.value_type=SEQUENCE;
-  option3.element_type=INTEGER;
+  option3.element_type=REFERENCE_TYPE;
+
+  field_t o3i = {0};
+  o3i.value_type=INTEGER;
+  o3i.required=true;
+  o3i.has_default=false;
+
 
 	add_field(&parent_field,&field1);
 	add_field(&parent_field,&field2);
@@ -353,10 +359,13 @@ static void test_validate_choice()
 	add_field(&field2,&option2);
 	add_field(&field2,&option3);
 
+	add_field(&option3,&o3i);
+
 	test_case cases[]={
     CASE(true,0x30,0x08,0x02,0x01,0x01,0x0C,0x03,0x66,0x6F,0x6F),
     CASE(true,0x30,0x0A,0x02,0x01,0x01,0x06,0x05,0x2A,0x86,0x48,0x86,0xF7),
-    CASE(true,0x30,0x0A,0x02,0x01,0x01,0x30,0x05,0x02,0x01,0x01),
+    CASE(true,0x30,0x08,0x02,0x01,0x01,0x30,0x03,0x02,0x01,0x01),
+    CASE(true,0x30,0x0C,0x02,0x01,0x2A,0x30,0x07,0x02,0x01,0x00,0x02,0x02,0xFF,0x9C),
     CASE(false,0x30,0x03,0x02,0x01,0x01),
     CASE(false,0x30,0x07,0x02,0x01,0x01,0x01,0x01,0x01,0x01),
     CASE(false,0x30,0x10,0x02,0x01,0x01,0x06,0x06,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x0C,0x03,0x66,0x6F,0x6F),
@@ -370,6 +379,10 @@ static void test_validate_choice()
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
 		bool is_valid=validate_asn1(&parent_field,root);
+    if(is_valid!=tc.result){
+      print_field(&parent_field,0);
+      print_tlv_node(root,0);
+    }
 		TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 
@@ -456,13 +469,23 @@ static void test_validate_nested_fields()
   }
 }
 
+/*
+Numbers ::= SEQUENCE OF INTEGER
+ */
 static void test_validate_sequence_of()
 {
   field_t parent = {0};
   parent.name = "Numbers";
   parent.value_type = SEQUENCE;
   parent.required = true;
-  parent.element_type = INTEGER; // SEQUENCE OF INTEGER
+  parent.element_type = REFERENCE_TYPE;
+
+  field_t field1 = {0};
+  field1.value_type=INTEGER;
+  field1.required=true;
+  field1.has_default=false;
+
+  add_field(&parent,&field1);
 
   test_case cases[] = {
     CASE(true,0x30,0x09,0x02,0x01,0x01,0x02,0x01,0x02,0x02,0x01,0x03),
@@ -479,6 +502,73 @@ static void test_validate_sequence_of()
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
     bool is_valid = validate_asn1(&parent, root);
+    if(is_valid!=tc.result){
+      print_field(&parent,0);
+      print_tlv_node(root,0);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
+  }
+}
+
+/*
+Name ::= SEQUENCE OF RelativeDistinguishedName
+RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
+AttributeTypeAndValue ::= SEQUENCE {
+    type    OBJECT IDENTIFIER,
+    value   ANY
+}
+*/
+static void test_validate_set()
+{
+  field_t parent = {0};
+  parent.name = "Name";
+  parent.value_type = SEQUENCE;
+  parent.required = true;
+  parent.element_type = REFERENCE_TYPE;
+  parent.reference_type = "RelativeDistinguishedName";
+  
+  field_t field1 = {0};
+  field1.name="RelativeDistinguishedName";
+  field1.value_type=SET;
+  field1.element_type=REFERENCE_TYPE;
+  field1.reference_type="AttributeTypeAndValue";
+
+  field_t field2={0};
+  field2.name="AttributeTypeAndValue";
+  field2.value_type=SEQUENCE;
+  field2.required=true;
+
+  field_t field3={0};
+  field3.name="type";
+  field3.value_type=OBJECT_IDENTIFIER;
+  field3.required=true;
+
+  field_t field4={0};
+  field4.name="value";
+  field4.value_type=ANY;
+  field4.required=true;
+
+  add_field(&parent,&field1);
+  add_field(&field1,&field2);
+  add_field(&field2,&field3);
+  add_field(&field2,&field4);
+
+  test_case cases[] = {
+    CASE(true,0x30,0x13,0x31,0x11,0x30,0x0F,0x06,0x03,0x55,0x04,0x03,0x0C,0x08,0x4A,0x6F,0x68,0x6E,0x20,0x44,0x6F,0x65),
+  };
+
+  int len = ARRAY_LEN(cases);
+  for (int i = 0; i < len; i++) {
+    test_case tc = cases[i];
+    tlv_t actual = parse_tlv(tc.data, tc.len);
+    tlv_node_t *root = build_tlv(actual);
+    char msg[40] = {0};
+    snprintf(msg, 20, "case=%d\n", i);
+    bool is_valid = validate_asn1(&parent, root);
+    if(is_valid!=tc.result){
+      print_field(&parent,0);
+      print_tlv_node(root,0);
+    }
     TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
   }
 }
@@ -495,5 +585,6 @@ int main(void)
   RUN_TEST(test_validate_choice);
   RUN_TEST(test_validate_nested_fields);
   RUN_TEST(test_validate_sequence_of);
+  RUN_TEST(test_validate_set);
   return UNITY_END();
 }
