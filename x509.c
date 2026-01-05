@@ -85,6 +85,19 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
     return true;
   }
 
+  //TODO:validate order of elements in later stage
+  if(field->value_type==SET && field->element_type!=0) {
+    if(field->required && tlv->count<=0)
+      return false;
+    field_t *item_field=field->children[0];
+    for (int i=0; i<tlv->count; i++) {
+      tlv_node_t item=tlv->children[i];
+      if (validate_asn1(item_field,&item)==false)
+        return false;
+    }
+    return true;
+  }
+
   if (field->value_type==SEQUENCE) {
     bool prev_match=true;
     int tlv_index=0;

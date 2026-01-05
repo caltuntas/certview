@@ -68,6 +68,7 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
 	return tlv;
 }
 
+//TODO:check child length cannot be greater than parent length
 tlv_node_t* build_tlv(tlv_t tlv)
 {
   tlv_node_t* node=malloc(sizeof(*node));
