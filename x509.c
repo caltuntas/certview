@@ -144,22 +144,6 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
         }
 
       }
-      /*
-      if(matches==false) {
-        if(f->required)
-          return false;
-        else {
-          if(prev_match==false)
-            return false;
-          if(f->has_default || f->required==false){
-            prev_match=matches;
-            continue;
-          }
-        }
-      }
-      tlv_index++;
-      prev_match=matches;
-      */
     }
     if (tlv_index < tlv->count)
       return false;
@@ -174,10 +158,19 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
   if(field->value_type==ANY)
     return;
   if(field->value_type==CHOICE) {
+    field_value_t *value=calloc(1,sizeof(field_value_t));
+    value->field=field;
+    value->tlv=NULL;
+    *out=value;
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
-      if (validate_asn1(option_field,tlv))
-        return;
+      if (validate_asn1(option_field,tlv)){
+        field_value_t *child_value=calloc(1,sizeof(field_value_t));
+        child_value->field=option_field;
+        child_value->tlv=tlv;
+        add_field_value(value,child_value);
+        break;
+      }
     }
     return;
   }

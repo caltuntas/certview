@@ -732,6 +732,150 @@ static void test_bind_sequence_with_default()
   TEST_ASSERT_EQUAL_PTR(value->children[2]->field,&field3);
 }
 
+/*
+Example ::= CHOICE {
+    a INTEGER,
+    b OCTET STRING
+}
+*/
+static void test_bind_choice()
+{
+  field_t parent = {0};
+  parent.name = "Example";
+  parent.value_type = CHOICE;
+  parent.required = true;
+
+  field_t field1 = {0};
+  field1.name="a";
+  field1.value_type=INTEGER;
+  field1.required=true;
+
+  field_t field2 = {0};
+  field2.name="b";
+  field2.value_type=OCTET_STRING;
+  field2.required=true;
+
+  add_field(&parent,&field1);
+  add_field(&parent,&field2);
+
+  uint8_t buf[]={0x02,0x01,0x05};
+
+  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  tlv_node_t *tlv_root = build_tlv(actual);
+  bool is_valid = validate_asn1(&parent, tlv_root);
+  TEST_ASSERT_EQUAL(true, is_valid);
+  field_value_t *value=NULL;
+  bind_schema(&parent,tlv_root,&value);
+
+  TEST_ASSERT_EQUAL_PTR(value->field,&parent);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root);
+}
+
+/*
+Example ::= CHOICE {
+    a INTEGER,
+    b SEQUENCE {
+        x INTEGER,
+        y INTEGER
+    }
+}
+*/
+static void test_bind_choice_with_sequence()
+{
+  field_t parent = {0};
+  parent.name = "Example";
+  parent.value_type = CHOICE;
+  parent.required = true;
+
+  field_t field1 = {0};
+  field1.name="a";
+  field1.value_type=INTEGER;
+  field1.required=true;
+
+  field_t field2 = {0};
+  field2.name="b";
+  field2.value_type=SEQUENCE;
+  field2.required=true;
+
+  field_t field3 = {0};
+  field3.name="x";
+  field3.value_type=INTEGER;
+  field3.required=true;
+
+  field_t field4 = {0};
+  field4.name="y";
+  field4.value_type=INTEGER;
+  field4.required=true;
+
+  add_field(&parent,&field1);
+  add_field(&parent,&field2);
+
+  add_field(&field2,&field3);
+  add_field(&field2,&field4);
+
+  uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
+
+  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  tlv_node_t *tlv_root = build_tlv(actual);
+  bool is_valid = validate_asn1(&parent, tlv_root);
+  TEST_ASSERT_EQUAL(true, is_valid);
+  field_value_t *value=NULL;
+  bind_schema(&parent,tlv_root,&value);
+
+  TEST_ASSERT_EQUAL_PTR(value->field,&parent);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field2);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root);
+}
+
+/*
+Example ::= CHOICE {
+    a [0] EXPLICIT INTEGER,
+    b [1] EXPLICIT INTEGER
+}
+*/
+static void test_bind_choice_with_explicit()
+{
+  field_t parent = {0};
+  parent.name = "Example";
+  parent.value_type = CHOICE;
+  parent.required = true;
+
+  field_t field1 = {0};
+  field1.name="a";
+  field1.value_type=INTEGER;
+  field1.encoding_type=EXPLICIT;
+  field1.match_type=TAG;
+  field1.tag_number=0;
+  field1.required=true;
+  field1.tag_class=CONTEXT_SPECIFIC;
+
+  field_t field2 = {0};
+  field2.name="b";
+  field2.value_type=INTEGER;
+  field2.encoding_type=EXPLICIT;
+  field2.match_type=TAG;
+  field2.tag_number=1;
+  field2.tag_class=CONTEXT_SPECIFIC;
+  field2.required=true;
+
+  add_field(&parent,&field1);
+  add_field(&parent,&field2);
+
+  uint8_t buf[]={0xA1,0x03,0x02,0x01,0x05};
+
+  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  tlv_node_t *tlv_root = build_tlv(actual);
+  bool is_valid = validate_asn1(&parent, tlv_root);
+  TEST_ASSERT_EQUAL(true, is_valid);
+  field_value_t *value=NULL;
+  bind_schema(&parent,tlv_root,&value);
+
+  TEST_ASSERT_EQUAL_PTR(value->field,&parent);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field2);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -748,5 +892,8 @@ int main(void)
   RUN_TEST(test_bind_sequence);
   RUN_TEST(test_bind_sequence_with_optional);
   RUN_TEST(test_bind_sequence_with_default);
+  RUN_TEST(test_bind_choice);
+  RUN_TEST(test_bind_choice_with_sequence);
+  RUN_TEST(test_bind_choice_with_explicit);
   return UNITY_END();
 }
