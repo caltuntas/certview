@@ -31,8 +31,16 @@ typedef struct field_t {
   int tag_class;
 } field_t;
 
+typedef struct field_value_t {
+  field_t *field;
+  tlv_node_t *tlv;
+  size_t count;
+  struct field_value_t **children;
+} field_value_t;
+
 void print_field(field_t *field,int indent);
 void add_field(field_t *parent, field_t *child);
 bool validate_asn1(field_t *parent,tlv_node_t *tlv);
+void bind_schema(field_t *parent, tlv_node_t *tlv,field_value_t **out);
 
 #endif
