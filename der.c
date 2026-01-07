@@ -4,20 +4,10 @@ void print_tlv_node(tlv_node_t *node,int indent)
 {
   const char *tag_number_str=tag_number_t_toString(node->tlv.tag.number);
   char str[20]={0};
-  if(tag_number_str==NULL) {
-    if(node->tlv.tag.class ==CONTEXT_SPECIFIC && node->tlv.tag.type ==CONSTRUCTED){
-      sprintf(str,"[%d] EXPLICIT",node->tlv.tag.number);
-      tag_number_str=str;
-    } else if(node->tlv.tag.class ==CONTEXT_SPECIFIC){
-      sprintf(str,"[%d]",node->tlv.tag.number);
-      tag_number_str=str;
-    }
-  } else {
-    if(node->tlv.tag.class ==CONTEXT_SPECIFIC && node->tlv.tag.type ==CONSTRUCTED){
-      sprintf(str,"[%d] EXPLICIT",node->tlv.tag.number);
-      tag_number_str=str;
-    } 
-  }
+  if(node->tlv.tag.class==CONTEXT_SPECIFIC){
+    sprintf(str,"[%d]",node->tlv.tag.number);
+    tag_number_str=str;
+  } 
   const char *type_str=type_t_toString(node->tlv.tag.type);
   const char *class_str=class_t_toString(node->tlv.tag.class);
   printf("%*s %s(%s,len=%d):",indent,"",tag_number_str,type_str,node->tlv.len);
@@ -40,6 +30,14 @@ void print_tlv_node(tlv_node_t *node,int indent)
 //TODO:check tvl length and buffer size discrepancy
 //TODO:bit string parsing edge cases
 //TODO:check invalid encodings for instance integer cannot be constructed 
+/*
+Tag Byte: 7 6 5 4 3 2 1 0
+          | | |-----------|
+          | |       |
+          | |       +-- Tag number (low 5 bits)
+          | +---------- Primitive / Constructed (bit 6)
+          +------------ Class (bits 7–6)
+*/
 tlv_t parse_tlv(uint8_t *buf,size_t size)
 {
   uint8_t tag_byte = buf[0];

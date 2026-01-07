@@ -29,6 +29,7 @@ typedef struct field_t {
   bool has_default;
   int tag_number;
   int tag_class;
+  int pc;
 } field_t;
 
 typedef struct field_value_t {
