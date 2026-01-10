@@ -39,13 +39,11 @@ static void test_add_field(void)
   field1.name="algorithm";
   field1.value_type=OBJECT_IDENTIFIER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="parameters";
   field2.value_type=ANY;
   field2.required=false;
-  field2.match_type=POSITION;
 
   add_field(&parent_field,&field1);
   add_field(&parent_field,&field2);
@@ -67,13 +65,11 @@ static void test_oid_only(void)
   field1.value_type=OBJECT_IDENTIFIER;
   field1.tag_class=UNIVERSAL;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="parameters";
   field2.value_type=ANY;
   field2.required=false;
-  field2.match_type=POSITION;
 
   add_field(&parent_field,&field1);
   add_field(&parent_field,&field2);
@@ -82,7 +78,7 @@ static void test_oid_only(void)
   tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
   tlv_node_t *root =build_tlv(actual);
 
-  bool is_valid=validate_asn1(&parent_field,root);
+  bool is_valid=validate_schema(&parent_field,root);
 
   TEST_ASSERT_TRUE(is_valid);
 }
@@ -99,13 +95,11 @@ static void test_invalid_null_first(void)
   field1.name="algorithm";
   field1.value_type=OBJECT_IDENTIFIER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="parameters";
   field2.value_type=ANY;
   field2.required=false;
-  field2.match_type=POSITION;
 
   add_field(&parent_field,&field1);
   add_field(&parent_field,&field2);
@@ -114,7 +108,7 @@ static void test_invalid_null_first(void)
   tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
   tlv_node_t *root =build_tlv(actual);
 
-  bool is_valid=validate_asn1(&parent_field,root);
+  bool is_valid=validate_schema(&parent_field,root);
 
   TEST_ASSERT_FALSE(is_valid);
 }
@@ -138,13 +132,11 @@ static void test_validate(void)
   field1.value_type=OBJECT_IDENTIFIER;
   field1.tag_class=UNIVERSAL;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="parameters";
   field2.value_type=ANY;
   field2.required=false;
-  field2.match_type=POSITION;
 
   add_field(&parent_field,&field1);
   add_field(&parent_field,&field2);
@@ -167,7 +159,7 @@ static void test_validate(void)
 
     char msg[40];
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
@@ -193,7 +185,6 @@ static void test_validate_explicit(void)
   field1.tag_number=0;
   field1.tag_class=CONTEXT_SPECIFIC;
   field1.required=false;
-  field1.match_type=TAG;
   field1.encoding_type=EXPLICIT;
   field1.value_type=INTEGER;
   field1.has_default=true;
@@ -203,7 +194,6 @@ static void test_validate_explicit(void)
   field2.tag_class=UNIVERSAL;
   field2.value_type=INTEGER;
   field2.required=true;
-  field2.match_type=POSITION;
 
   add_field(&parent_field,&field1);
   add_field(&parent_field,&field2);
@@ -228,7 +218,7 @@ static void test_validate_explicit(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -259,14 +249,12 @@ static void test_validate_implicit(void)
   field1.tag_class=UNIVERSAL;
   field1.value_type=INTEGER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="issuerUniqueID";
   field2.tag_class=CONTEXT_SPECIFIC;
   field2.tag_number=1;
   field2.required=false;
-  field2.match_type=TAG;
   field2.encoding_type=IMPLICIT;
   field2.value_type=BIT_STRING;
 
@@ -275,7 +263,6 @@ static void test_validate_implicit(void)
   field3.tag_class=CONTEXT_SPECIFIC;
   field3.tag_number=2;
   field3.required=false;
-  field3.match_type=TAG;
   field3.encoding_type=IMPLICIT;
   field3.value_type=BIT_STRING;
 
@@ -304,7 +291,7 @@ static void test_validate_implicit(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -337,14 +324,12 @@ static void test_validate_implicit_sequence(void)
   field1.tag_class=UNIVERSAL;
   field1.value_type=INTEGER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="payload";
   field2.tag_class=CONTEXT_SPECIFIC;
   field2.tag_number=0;
   field2.required=false;
-  field2.match_type=TAG;
   field2.encoding_type=IMPLICIT;
   field2.value_type=REFERENCE_TYPE;
   field2.reference_type="Payload";
@@ -360,7 +345,6 @@ static void test_validate_implicit_sequence(void)
   payload_flag.tag_class=UNIVERSAL;
   payload_flag.value_type = BOOLEAN;
   payload_flag.required = true;
-  payload_flag.match_type = POSITION;
 
 
   field_t payload_value = {0};
@@ -368,7 +352,6 @@ static void test_validate_implicit_sequence(void)
   payload_value.tag_class=UNIVERSAL;
   payload_value.value_type = INTEGER;
   payload_value.required = true;
-  payload_value.match_type = POSITION;
 
 
   add_field(&parent_field,&field1);
@@ -391,7 +374,97 @@ static void test_validate_implicit_sequence(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
+    if(is_valid!=tc.result){
+      print_field(&parent_field,0);
+      print_tlv_node(root,0);
+    }
+    TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
+  }
+}
+
+/*
+TestExplicit ::= SEQUENCE {
+  id        INTEGER,
+  payload   [0] EXPLICIT Payload OPTIONAL
+}
+
+Payload ::= SEQUENCE {
+  flag      BOOLEAN,
+  value     INTEGER
+}
+ */
+static void test_validate_explicit_sequence(void)
+{
+  field_t parent_field={0};
+  parent_field.name="TestExplicit";
+  parent_field.tag_class=UNIVERSAL;
+  parent_field.value_type=SEQUENCE;
+  parent_field.pc=CONSTRUCTED;
+  parent_field.required=true;
+
+  field_t field1={0};
+  field1.name="id";
+  field1.tag_class=UNIVERSAL;
+  field1.value_type=INTEGER;
+  field1.required=true;
+
+  field_t field2={0};
+  field2.name="payload";
+  field2.tag_class=CONTEXT_SPECIFIC;
+  field2.tag_number=0;
+  field2.required=false;
+  field2.encoding_type=EXPLICIT;
+  field2.value_type=REFERENCE_TYPE;
+  field2.reference_type="Payload";
+
+  field_t payload={0};
+  payload.name="Payload";
+  payload.tag_class=UNIVERSAL;
+  payload.value_type=SEQUENCE;
+  payload.pc=CONSTRUCTED;
+
+  field_t payload_flag={0};
+  payload_flag.name="flag";
+  payload_flag.tag_class=UNIVERSAL;
+  payload_flag.value_type=BOOLEAN;
+  payload_flag.required=true;
+
+  field_t payload_value={0};
+  payload_value.name="value";
+  payload_value.tag_class=UNIVERSAL;
+  payload_value.value_type=INTEGER;
+  payload_value.required=true;
+
+  add_field(&parent_field,&field1);
+  add_field(&parent_field,&field2);
+
+  add_field(&payload,&payload_flag);
+  add_field(&payload,&payload_value);
+
+  add_field(&field2,&payload);
+
+  test_case cases[]={
+    CASE(true,0x30,0x03,0x02,0x01,0x05),
+    CASE(true,0x30,0x0D,0x02,0x01,0x05,0xA0,0x08,0x30,0x06,0x01,0x01,0xFF,0x02,0x01,0x2A),
+    CASE(false,0x30,0x0A,0x02,0x01,0x05,0x80,0x05,0x30,0x03,0x01,0x01,0xFF),
+    CASE(false,0x30,0x08,0x02,0x01,0x05,0xA0,0x03,0x02,0x01,0x2A),
+    CASE(false,0x30,0x0B,0x02,0x01,0x05,0xA0,0x06,0x01,0x01,0xFF,0x02,0x01,0x2A),
+    CASE(false,0x30,0x0A,0x02,0x01,0x05,0xA0,0x05,0x30,0x04,0x01,0x01,0xFF),
+    CASE(false,0x30,0x0D,0x02,0x01,0x05,0xA0,0x08,0x30,0x06,0x02,0x01,0x2A,0x01,0x01,0xFF),
+    CASE(false,0x30,0x0D,0x02,0x01,0x05,0xA1,0x08,0x30,0x06,0x01,0x01,0xFF,0x02,0x01,0x2A),
+  };
+
+  int len = ARRAY_LEN(cases);
+  for (int i=0; i<len; i++) {
+    test_case tc=cases[i];
+    tlv_t actual=parse_tlv(tc.data,tc.len);
+    tlv_node_t *root=build_tlv(actual);
+
+    char msg[40]={0};
+    snprintf(msg,20,"case=%d\n",i);
+
+    bool is_valid=validate_schema(&parent_field,root);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -424,12 +497,10 @@ static void test_validate_choice()
   field1.tag_class=UNIVERSAL;
   field1.value_type=INTEGER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2 = {0};
   field2.name = "bar";
   field2.value_type = CHOICE;
-  field2.match_type = POSITION;
   field2.required = true;
 
   field_t option1={0};	
@@ -481,7 +552,7 @@ static void test_validate_choice()
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -514,13 +585,11 @@ static void test_validate_nested_fields()
   field1.name="algorithm";
   field1.value_type=OBJECT_IDENTIFIER;
   field1.required=true;
-  field1.match_type=POSITION;
 
   field_t field2={0};	
   field2.name="parameters";
   field2.value_type=ANY;
   field2.required=false;
-  field2.match_type=POSITION;
 
   field_t parent_field={0};	
   parent_field.name="SubjectPublicKeyInfo";
@@ -533,14 +602,12 @@ static void test_validate_nested_fields()
   field4.value_type=REFERENCE_TYPE;
   field4.reference_type="AlgorithmIdentifier";
   field4.required=true;
-  field4.match_type=POSITION;
 
   field_t field3={0};	
   field3.name="subjectPublicKey";
   field3.tag_class=UNIVERSAL;
   field3.required=true;
   field3.value_type=BIT_STRING;
-  field3.match_type=POSITION;
 
   add_field(&algo_field,&field1);
   add_field(&algo_field,&field2);
@@ -566,7 +633,7 @@ static void test_validate_nested_fields()
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_asn1(&parent_field,root);
+    bool is_valid=validate_schema(&parent_field,root);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -608,7 +675,7 @@ static void test_validate_sequence_of()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_asn1(&parent, root);
+    bool is_valid = validate_schema(&parent, root);
     if(is_valid!=tc.result){
       print_field(&parent,0);
       print_tlv_node(root,0);
@@ -680,7 +747,7 @@ static void test_validate_set()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_asn1(&parent, root);
+    bool is_valid = validate_schema(&parent, root);
     if(is_valid!=tc.result){
       print_field(&parent,0);
       print_tlv_node(root,0);
@@ -727,7 +794,6 @@ static void test_validate_complex()
   cp_flag.name = "flag";
   cp_flag.value_type = BOOLEAN;
   cp_flag.required = true;
-  cp_flag.match_type = POSITION;
 
   field_t cp_values = {0};
   cp_values.name = "values";
@@ -735,7 +801,6 @@ static void test_validate_complex()
   cp_values.pc=CONSTRUCTED;
   cp_values.required = true;
   cp_values.element_type = REFERENCE_TYPE;
-  cp_values.match_type = POSITION;
 
   field_t integer = {0};
   integer.value_type=INTEGER;
@@ -811,14 +876,12 @@ static void test_validate_complex()
   attr_type.name = "type";
   attr_type.value_type = OBJECT_IDENTIFIER;
   attr_type.required = true;
-  attr_type.match_type = POSITION;
 
   field_t attr_value = {0};
   attr_value.name = "value";
   attr_value.value_type = REFERENCE_TYPE;
   attr_value.reference_type = "AttributeValue";
   attr_value.required = true;
-  attr_value.match_type = POSITION;
 
   add_field(&attribute, &attr_type);
   add_field(&attribute, &attr_value);
@@ -846,14 +909,12 @@ static void test_validate_complex()
   ft_identifier.name = "identifier";
   ft_identifier.value_type = INTEGER;
   ft_identifier.required = true;
-  ft_identifier.match_type = POSITION;
 
   field_t ft_payload = {0};
   ft_payload.name = "payload";
   ft_payload.value_type = REFERENCE_TYPE;
   ft_payload.reference_type = "Payload";
   ft_payload.required = true;
-  ft_payload.match_type = POSITION;
 
   field_t ft_attributes = {0};
   ft_attributes.name = "attributes";
@@ -862,7 +923,6 @@ static void test_validate_complex()
   ft_attributes.element_type = REFERENCE_TYPE;
   ft_attributes.reference_type = "Attribute";
   ft_attributes.required = false;
-  ft_attributes.match_type = POSITION;
 
   add_field(&final_test, &ft_version);
   add_field(&final_test, &ft_identifier);
@@ -886,7 +946,7 @@ static void test_validate_complex()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_asn1(&final_test, root);
+    bool is_valid = validate_schema(&final_test, root);
     if(is_valid!=tc.result){
       print_field(&final_test,0);
       print_tlv_node(root,0);
@@ -926,7 +986,7 @@ static void test_bind_sequence()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -976,7 +1036,7 @@ static void test_bind_sequence_with_optional()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -1029,7 +1089,7 @@ static void test_bind_sequence_with_default()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -1073,7 +1133,7 @@ static void test_bind_choice()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -1130,7 +1190,7 @@ static void test_bind_choice_with_sequence()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -1157,7 +1217,6 @@ static void test_bind_choice_with_explicit()
   field1.name="a";
   field1.value_type=INTEGER;
   field1.encoding_type=EXPLICIT;
-  field1.match_type=TAG;
   field1.tag_number=0;
   field1.required=true;
   field1.tag_class=CONTEXT_SPECIFIC;
@@ -1166,7 +1225,6 @@ static void test_bind_choice_with_explicit()
   field2.name="b";
   field2.value_type=INTEGER;
   field2.encoding_type=EXPLICIT;
-  field2.match_type=TAG;
   field2.tag_number=1;
   field2.tag_class=CONTEXT_SPECIFIC;
   field2.required=true;
@@ -1178,7 +1236,7 @@ static void test_bind_choice_with_explicit()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_asn1(&parent, tlv_root);
+  bool is_valid = validate_schema(&parent, tlv_root);
   TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
   bind_schema(&parent,tlv_root,&value);
@@ -1198,6 +1256,7 @@ int main(void)
   RUN_TEST(test_validate_explicit);
   RUN_TEST(test_validate_implicit);
   RUN_TEST(test_validate_implicit_sequence);
+  RUN_TEST(test_validate_explicit_sequence);
   RUN_TEST(test_validate_choice);
   RUN_TEST(test_validate_nested_fields);
   RUN_TEST(test_validate_sequence_of);

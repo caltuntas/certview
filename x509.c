@@ -6,18 +6,18 @@
 
 void add_field(field_t *parent, field_t *child)
 {
-	size_t cnt=parent->count;
-	parent->children=realloc(parent->children,sizeof(field_t*)*(parent->count+1));
-	parent->children[cnt]=child;
-	parent->count+=1;
+  size_t cnt=parent->count;
+  parent->children=realloc(parent->children,sizeof(field_t*)*(parent->count+1));
+  parent->children[cnt]=child;
+  parent->count+=1;
 }
 
 void add_field_value(field_value_t *parent, field_value_t *child)
 {
-	size_t cnt=parent->count;
-	parent->children=realloc(parent->children,sizeof(field_t*)*(parent->count+1));
-	parent->children[cnt]=child;
-	parent->count+=1;
+  size_t cnt=parent->count;
+  parent->children=realloc(parent->children,sizeof(field_t*)*(parent->count+1));
+  parent->children[cnt]=child;
+  parent->count+=1;
 }
 
 void print_field(field_t *field,int indent) 
@@ -56,7 +56,7 @@ void print_field(field_t *field,int indent)
   }
 }
 
-bool validate_asn1(field_t *field,tlv_node_t *tlv)
+bool validate_schema(field_t *field,tlv_node_t *tlv)
 {
   if(field->required && tlv==NULL)
     return false;
@@ -64,11 +64,17 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
     return true;
 
   if(field->value_type==REFERENCE_TYPE){
-      return validate_asn1(field->children[0],tlv);
+    field_t *f=field->children[0];
+    //TODO:this is a workaround, find a propery model 
+    if(field->encoding_type!=NONE) {
+      f->encoding_type=field->encoding_type;
+      f->tag_number=field->tag_number;
+    }
+    return validate_schema(f,tlv);
   }else if(field->value_type==CHOICE){
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
-      if (validate_asn1(option_field,tlv))
+      if (validate_schema(option_field,tlv))
         return true;
     }
     return false;
@@ -103,6 +109,20 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
           return false;
       }
     }else if(field->pc==CONSTRUCTED) {
+      //validate outer tag of constructed types
+      if (field->encoding_type==IMPLICIT){
+        if(field->tag_number!=t.number)
+          return false;
+      }else if (field->encoding_type==EXPLICIT){
+        if(tlv->count<=0) 
+          return false;
+        if(field->tag_number!=tlv->tlv.tag.number)
+          return false;
+        tlv=&tlv->children[0];
+      }else{
+        if(field->value_type!=tlv->tlv.tag.number)
+          return false;
+      }
       if(field->value_type==SEQUENCE) {
         //SEQUENCE OF
         if(field->element_type!=0){
@@ -113,16 +133,14 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
             tlv_node_t item=tlv->children[i];
-            if (validate_asn1(item_field,&item)==false)
+            if (validate_schema(item_field,&item)==false)
               return false;
           }
           return true;
         }
         //SEQUENCE
         else {
-          bool prev_match=true;
           int tlv_index=0;
-          bool matches=false;
           for (int i=0; i<field->count; i++) {
             field_t *f=field->children[i];
             encoding_type_t e=f->encoding_type;
@@ -135,7 +153,7 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
                 required_count++;
             }
             int values_left=tlv->count-tlv_index;
-            matches=validate_asn1(f,tn);
+            bool matches=validate_schema(f,tn);
             //required field and has no default value
             if (f->required && f->has_default==false) {
               if (matches==false)
@@ -170,7 +188,7 @@ bool validate_asn1(field_t *field,tlv_node_t *tlv)
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
             tlv_node_t item=tlv->children[i];
-            if (validate_asn1(item_field,&item)==false)
+            if (validate_schema(item_field,&item)==false)
               return false;
           }
           return true;
@@ -195,7 +213,7 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
     *out=value;
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
-      if (validate_asn1(option_field,tlv)){
+      if (validate_schema(option_field,tlv)){
         field_value_t *child_value=calloc(1,sizeof(field_value_t));
         child_value->field=option_field;
         child_value->tlv=tlv;
@@ -229,7 +247,7 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
     field_t *item_field=field->children[0];
     for (int i=0; i<tlv->count; i++) {
       tlv_node_t item=tlv->children[i];
-      if (validate_asn1(item_field,&item)==false)
+      if (validate_schema(item_field,&item)==false)
         return;
     }
     return;
@@ -242,7 +260,7 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
     field_t *item_field=field->children[0];
     for (int i=0; i<tlv->count; i++) {
       tlv_node_t item=tlv->children[i];
-      if (validate_asn1(item_field,&item)==false)
+      if (validate_schema(item_field,&item)==false)
         return;
     }
     return;
@@ -271,18 +289,18 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
           required_count++;
       }
       int values_left=tlv->count-tlv_index;
-      matches=validate_asn1(f,tn);
+      matches=validate_schema(f,tn);
       //required field and has no default value
       if (f->required && f->has_default==false) {
         if (matches){
-            field_value_t *child_value=calloc(1,sizeof(field_value_t));
-            child_value->field=f;
-            child_value->tlv=tn;
-            add_field_value(value,child_value);
-            tlv_index++;
+          field_value_t *child_value=calloc(1,sizeof(field_value_t));
+          child_value->field=f;
+          child_value->tlv=tn;
+          add_field_value(value,child_value);
+          tlv_index++;
         }
       }else {
-      //optional field or has default value
+        //optional field or has default value
         if(matches==false) {
           continue;
         }else {
