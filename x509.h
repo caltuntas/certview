@@ -5,11 +5,6 @@
 
 #define REFERENCE_TYPE 777
 
-typedef enum match_type_t {
-	POSITION,
-	TAG
-} match_type_t;
-
 typedef enum encoding_type_t {
   NONE,
 	EXPLICIT,
@@ -24,7 +19,6 @@ typedef struct field_t {
 	bool required;
 	struct field_t **children;
 	size_t count;
-	match_type_t match_type;
   encoding_type_t encoding_type;
   bool has_default;
   int tag_number;

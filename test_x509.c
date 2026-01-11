@@ -817,7 +817,6 @@ static void test_validate_complex()
   cp_extra.encoding_type = EXPLICIT;
   cp_extra.value_type = UTF8String;
   cp_extra.required = false;
-  cp_extra.match_type = TAG;
 
   add_field(&complex_payload, &cp_flag);
   add_field(&complex_payload, &cp_values);
@@ -903,7 +902,6 @@ static void test_validate_complex()
   ft_version.value_type = INTEGER;
   ft_version.required = false;
   ft_version.has_default = true;
-  ft_version.match_type = TAG;
 
   field_t ft_identifier = {0};
   ft_identifier.name = "identifier";

@@ -232,10 +232,6 @@ void bind_schema(field_t *field, tlv_node_t *tlv,field_value_t **out)
     if(tlv->count>0)
       return;
   }
-  if(field->match_type==TAG) {
-    if(field->tag_number!=t.number)
-      return;
-  }
   if (field->tag_class!=t.class)
     return;
   if ((field->encoding_type!=EXPLICIT && field->encoding_type!=IMPLICIT) && field->value_type!=t.number)
