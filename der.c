@@ -1,5 +1,13 @@
 #include "der.h"
 
+void print_data(uint8_t *data,size_t len)
+{
+  for (int i=0;i<len; i++) {
+    printf("%02X,",data[i]);
+  }
+  printf("\n");
+}
+
 void print_tlv_node(tlv_node_t *node,int indent) 
 {
   const char *tag_number_str=tag_number_t_toString(node->tlv.tag.number);

@@ -87,5 +87,6 @@ typedef struct tlv_node_t {
 tlv_t parse_tlv(uint8_t *buf,size_t size);
 tlv_node_t* build_tlv(tlv_t tlv);
 void print_tlv_node(tlv_node_t *node,int indent);
+void print_data(uint8_t *data,size_t len);
 
 #endif

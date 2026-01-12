@@ -34,8 +34,8 @@ typedef struct field_value_t {
 } field_value_t;
 
 void print_field(field_t *field,int indent);
+void print_field_value(field_value_t *value,int indent);
 void add_field(field_t *parent, field_t *child);
-bool validate_schema(field_t *parent,tlv_node_t *tlv);
-void bind_schema(field_t *parent, tlv_node_t *tlv,field_value_t **out);
+bool validate_schema(field_t *parent,tlv_node_t *tlv,field_value_t **out);
 
 #endif

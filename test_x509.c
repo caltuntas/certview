@@ -78,7 +78,11 @@ static void test_oid_only(void)
   tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
   tlv_node_t *root =build_tlv(actual);
 
-  bool is_valid=validate_schema(&parent_field,root);
+  field_value_t *out=NULL;
+  bool is_valid=validate_schema(&parent_field,root,&out);
+  print_field(&parent_field,0);
+  print_tlv_node(root,0);
+  print_field_value(out,0);
 
   TEST_ASSERT_TRUE(is_valid);
 }
@@ -108,7 +112,13 @@ static void test_invalid_null_first(void)
   tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
   tlv_node_t *root =build_tlv(actual);
 
-  bool is_valid=validate_schema(&parent_field,root);
+  field_value_t *out=NULL;
+  bool is_valid=validate_schema(&parent_field,root,&out);
+  if(is_valid){
+    print_field(&parent_field,0);
+    print_tlv_node(root,0);
+    print_field_value(out,0);
+  }
 
   TEST_ASSERT_FALSE(is_valid);
 }
@@ -152,6 +162,7 @@ static void test_validate(void)
   };
 
   int len = ARRAY_LEN(cases);
+  print_field(&parent_field,0);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
     tlv_t actual = parse_tlv(tc.data,tc.len);
@@ -159,7 +170,13 @@ static void test_validate(void)
 
     char msg[40];
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
+    if(is_valid){
+      print_data(tc.data,tc.len);
+      print_tlv_node(root,0);
+      print_field_value(out,0);
+    }
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
@@ -218,7 +235,8 @@ static void test_validate_explicit(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -291,7 +309,8 @@ static void test_validate_implicit(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -374,7 +393,8 @@ static void test_validate_implicit_sequence(void)
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -464,7 +484,8 @@ static void test_validate_explicit_sequence(void)
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
 
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -552,7 +573,8 @@ static void test_validate_choice()
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -633,7 +655,8 @@ static void test_validate_nested_fields()
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
-    bool is_valid=validate_schema(&parent_field,root);
+    field_value_t *out=NULL;
+    bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
       print_tlv_node(root,0);
@@ -675,7 +698,8 @@ static void test_validate_sequence_of()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_schema(&parent, root);
+    field_value_t *out=NULL;
+    bool is_valid = validate_schema(&parent, root,&out);
     if(is_valid!=tc.result){
       print_field(&parent,0);
       print_tlv_node(root,0);
@@ -747,7 +771,8 @@ static void test_validate_set()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_schema(&parent, root);
+    field_value_t *out=NULL;
+    bool is_valid = validate_schema(&parent, root,&out);
     if(is_valid!=tc.result){
       print_field(&parent,0);
       print_tlv_node(root,0);
@@ -944,7 +969,8 @@ static void test_validate_complex()
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
-    bool is_valid = validate_schema(&final_test, root);
+    field_value_t *out=NULL;
+    bool is_valid = validate_schema(&final_test, root,&out);
     if(is_valid!=tc.result){
       print_field(&final_test,0);
       print_tlv_node(root,0);
@@ -984,10 +1010,9 @@ static void test_bind_sequence()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
@@ -1034,10 +1059,9 @@ static void test_bind_sequence_with_optional()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
@@ -1087,10 +1111,9 @@ static void test_bind_sequence_with_default()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
@@ -1102,11 +1125,11 @@ static void test_bind_sequence_with_default()
 }
 
 /*
-   Example ::= CHOICE {
-   a INTEGER,
-   b OCTET STRING
-   }
-   */
+Example ::= CHOICE {
+  a INTEGER,
+  b OCTET STRING
+}
+*/
 static void test_bind_choice()
 {
   field_t parent = {0};
@@ -1131,10 +1154,9 @@ static void test_bind_choice()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
@@ -1142,14 +1164,14 @@ static void test_bind_choice()
 }
 
 /*
-   Example ::= CHOICE {
-   a INTEGER,
-   b SEQUENCE {
-   x INTEGER,
-   y INTEGER
-   }
-   }
-   */
+Example ::= CHOICE {
+  a INTEGER,
+  b SEQUENCE {
+    x INTEGER,
+    y INTEGER
+  }
+}
+*/
 static void test_bind_choice_with_sequence()
 {
   field_t parent = {0};
@@ -1188,10 +1210,11 @@ static void test_bind_choice_with_sequence()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_field(&parent,0);
+  print_tlv_node(tlv_root,0);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field2);
@@ -1234,10 +1257,9 @@ static void test_bind_choice_with_explicit()
 
   tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
   tlv_node_t *tlv_root = build_tlv(actual);
-  bool is_valid = validate_schema(&parent, tlv_root);
-  TEST_ASSERT_EQUAL(true, is_valid);
   field_value_t *value=NULL;
-  bind_schema(&parent,tlv_root,&value);
+  bool is_valid = validate_schema(&parent, tlv_root,&value);
+  TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field2);
