@@ -23,9 +23,20 @@ void add_field_value(field_value_t *parent, field_value_t *child)
 field_value_t* create_field_value(field_t *f, tlv_node_t *t)
 {
   field_value_t *child=calloc(1,sizeof(field_value_t));
-  child->field=f;
+  if(f->parent && f->parent->value_type==REFERENCE_TYPE)
+    child->field=f->parent;
+  else
+    child->field=f;
   child->tlv=t;
   return child;
+}
+
+void create_add_field_value(field_value_t *parent, field_t *f, tlv_node_t *t)
+{
+  if(f->value_type!=REFERENCE_TYPE) {
+    field_value_t *cv=create_field_value(f,t);
+    add_field_value(parent,cv);
+  }
 }
 
 void print_field(field_t *field,int indent) 
@@ -74,8 +85,9 @@ void print_field_value(field_value_t *value,int indent)
   else
     sprintf(type_name,"%s",tag_number_str);
   char str[40]={0};
-  if(value->field->tag_class==CONTEXT_SPECIFIC && value->field->encoding_type==EXPLICIT)
+  if(value->field->tag_class==CONTEXT_SPECIFIC && value->field->encoding_type==EXPLICIT){
     sprintf(str,"[%d] EXPLICIT %s",value->field->tag_number,type_name);
+  }
   else if(value->field->tag_class ==CONTEXT_SPECIFIC && value->field->encoding_type==IMPLICIT)
     sprintf(str,"[%d] IMPLICIT %s",value->field->tag_number,type_name);
   else
@@ -89,17 +101,35 @@ void print_field_value(field_value_t *value,int indent)
   }
 
   printf("%*s %s ::= %s ",indent,"",value->field->name,str);
+  printf("[");
+
+  if(value->field->value_type==ANY && value->tlv){
+    const char *type_str=type_t_toString(value->tlv->tlv.tag.type);
+    const char *class_str=class_t_toString(value->tlv->tlv.tag.class);
+    const char *tag_number_str=tag_number_t_toString(value->tlv->tlv.tag.number);
+    printf("%s ",tag_number_str);
+  }
+
   if(value->tlv==NULL) {
-    printf("NULL");
+    printf("omitted");
   }else if (value->tlv->count <= 0) {
     for(int i=0; i<value->tlv->tlv.len; i++) {
       printf("%02X,",*(value->tlv->tlv.value+i));
     }
-  } else {
+  } else if(value->tlv && value->tlv->count>0){
+    tlv_node_t node=value->tlv->children[0];
+    for(int i=0; i<node.tlv.len; i++) {
+      printf("%02X,",*(node.tlv.value+i));
+    }
+    //print_node_values(value->tlv,0);
+  }
+  else {
     for(int i=value->tlv->tlv.len_meta+2; i>0; i--) {
       printf("%02X,",*(value->tlv->tlv.value-i));
     }
   }
+  printf("]");
+
   if(value->field->count > 0){
     printf("{");
   }
@@ -123,6 +153,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     field_t *f=field->children[0];
     //TODO:this is a workaround, find a propery model 
     if(field->encoding_type!=NONE) {
+      f->parent=field;
       f->encoding_type=field->encoding_type;
       f->tag_number=field->tag_number;
     }
@@ -137,8 +168,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
       if (validate_schema(option_field,tlv,out)) {
-        field_value_t *cv=create_field_value(option_field,tlv);
-        add_field_value(parent_value,cv);
+        create_add_field_value(parent_value,option_field,tlv);
         return true;
       }
     }
@@ -214,7 +244,6 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
           int tlv_index=0;
           for (int i=0; i<field->count; i++) {
             field_t *f=field->children[i];
-            encoding_type_t e=f->encoding_type;
             tlv_node_t* tn=NULL;
             if(tlv->count>0 && tlv_index<tlv->count)
               tn=&tlv->children[tlv_index];
@@ -231,28 +260,23 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
                 return false;
               else {
                 tlv_index++;
-                field_value_t *cv=create_field_value(f,tn);
-                add_field_value(parent_value,cv);
+                create_add_field_value(parent_value,f,tn);
               }
             }else {
               //optional field or has default value
               if(matches==false) {
-                field_value_t *cv=create_field_value(f,NULL);
-                add_field_value(parent_value,cv);
+                create_add_field_value(parent_value,f,NULL);
                 continue;
               }else {
                 if(values_left<=required_count) {
-                  field_value_t *cv=create_field_value(f,NULL);
-                  add_field_value(parent_value,cv);
+                  create_add_field_value(parent_value,f,NULL);
                   continue;
                 }
                 else {
                   tlv_index++;
-                  field_value_t *cv=create_field_value(f,tn);
-                  add_field_value(parent_value,cv);
+                  create_add_field_value(parent_value,f,tn);
                 }
               }
-
             }
           }
           if (tlv_index < tlv->count)

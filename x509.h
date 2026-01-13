@@ -17,6 +17,7 @@ typedef struct field_t {
 	int value_type;
 	int element_type;
 	bool required;
+  struct field_t *parent;
 	struct field_t **children;
 	size_t count;
   encoding_type_t encoding_type;

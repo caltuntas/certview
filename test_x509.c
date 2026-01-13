@@ -21,6 +21,31 @@ void tearDown(void)
 {
 }
 
+void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value)
+{
+  static int counter=1;
+  printf("#######Case %d############\n",counter++);
+  printf("---ASN1 Definition---\n");
+  print_field(field,0);
+  printf("\n");
+  printf("---Raw Data---\n");
+  print_data(data,data_len);
+  printf("\n");
+  printf("---Parsed Der---\n");
+  print_tlv_node(node,0);
+  if(valid){
+    printf("\n");
+    printf("---Mapped Values---\n");
+    print_field_value(value,0);
+    printf("\n");
+  } else {
+    printf("\n");
+    printf("---Mapped Values---\n");
+    printf("Invalid structure!\n");
+  }
+  printf("#######################\n");
+}
+
 /*
    AlgorithmIdentifier ::= SEQUENCE {
    algorithm   OBJECT IDENTIFIER,
@@ -75,14 +100,13 @@ static void test_oid_only(void)
   add_field(&parent_field,&field2);
 
   uint8_t buf[]={0x30,0x0A,0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x04,0x03,0x02};
-  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
   tlv_node_t *root =build_tlv(actual);
 
   field_value_t *out=NULL;
   bool is_valid=validate_schema(&parent_field,root,&out);
-  print_field(&parent_field,0);
-  print_tlv_node(root,0);
-  print_field_value(out,0);
+  print_debug(is_valid,buf,len,root,&parent_field,out);
 
   TEST_ASSERT_TRUE(is_valid);
 }
@@ -109,16 +133,13 @@ static void test_invalid_null_first(void)
   add_field(&parent_field,&field2);
 
   uint8_t buf[]={0x30,0x0C,0x05,0x00,0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x04,0x03,0x02};
-  tlv_t actual = parse_tlv(buf,ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
   tlv_node_t *root =build_tlv(actual);
 
   field_value_t *out=NULL;
   bool is_valid=validate_schema(&parent_field,root,&out);
-  if(is_valid){
-    print_field(&parent_field,0);
-    print_tlv_node(root,0);
-    print_field_value(out,0);
-  }
+  print_debug(is_valid,buf,len,root,&parent_field,out);
 
   TEST_ASSERT_FALSE(is_valid);
 }
@@ -162,7 +183,6 @@ static void test_validate(void)
   };
 
   int len = ARRAY_LEN(cases);
-  print_field(&parent_field,0);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
     tlv_t actual = parse_tlv(tc.data,tc.len);
@@ -172,11 +192,7 @@ static void test_validate(void)
     snprintf(msg,20,"case=%d\n",i);
     field_value_t *out=NULL;
     bool is_valid=validate_schema(&parent_field,root,&out);
-    if(is_valid){
-      print_data(tc.data,tc.len);
-      print_tlv_node(root,0);
-      print_field_value(out,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent_field,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
@@ -237,10 +253,7 @@ static void test_validate_explicit(void)
     snprintf(msg,20,"case=%d\n",i);
     field_value_t *out=NULL;
     bool is_valid=validate_schema(&parent_field,root,&out);
-    if(is_valid!=tc.result){
-      print_field(&parent_field,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent_field,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
@@ -311,24 +324,21 @@ static void test_validate_implicit(void)
     snprintf(msg,20,"case=%d\n",i);
     field_value_t *out=NULL;
     bool is_valid=validate_schema(&parent_field,root,&out);
-    if(is_valid!=tc.result){
-      print_field(&parent_field,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent_field,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
 
 /*
-   TestImplicit ::= SEQUENCE {
-   id        INTEGER,
-   payload   [0] IMPLICIT Payload OPTIONAL
-   }
-   Payload ::= SEQUENCE {
-   flag      BOOLEAN,
-   value     INTEGER
-   }
-   */
+TestImplicit ::= SEQUENCE {
+  id        INTEGER,
+  payload   [0] IMPLICIT Payload OPTIONAL
+}
+Payload ::= SEQUENCE {
+  flag      BOOLEAN,
+  value     INTEGER
+}
+*/
 static void test_validate_implicit_sequence(void) 
 {
   field_t parent_field={0};	
@@ -367,7 +377,7 @@ static void test_validate_implicit_sequence(void)
 
 
   field_t payload_value = {0};
-  payload_value.name = "flag";
+  payload_value.name = "value";
   payload_value.tag_class=UNIVERSAL;
   payload_value.value_type = INTEGER;
   payload_value.required = true;
@@ -395,10 +405,7 @@ static void test_validate_implicit_sequence(void)
     snprintf(msg,20,"case=%d\n",i);
     field_value_t *out=NULL;
     bool is_valid=validate_schema(&parent_field,root,&out);
-    if(is_valid!=tc.result){
-      print_field(&parent_field,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent_field,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
 }
@@ -1266,6 +1273,90 @@ static void test_bind_choice_with_explicit()
   TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root);
 }
 
+/*
+TestImplicit ::= SEQUENCE {
+  id        INTEGER,
+  payload   [0] IMPLICIT Payload OPTIONAL
+}
+Payload ::= SEQUENCE {
+  flag      BOOLEAN,
+  value     INTEGER
+}
+*/
+static void test_bind_implicit_sequence(void) 
+{
+  field_t parent_field={0};	
+  parent_field.name="TestImplicit";
+  parent_field.tag_class=UNIVERSAL;
+  parent_field.value_type=SEQUENCE;
+  parent_field.pc=CONSTRUCTED;
+  parent_field.required=true;
+
+  field_t field1={0};	
+  field1.name="id";
+  field1.tag_class=UNIVERSAL;
+  field1.value_type=INTEGER;
+  field1.required=true;
+
+  field_t field2={0};	
+  field2.name="payload";
+  field2.tag_class=CONTEXT_SPECIFIC;
+  field2.tag_number=0;
+  field2.required=false;
+  field2.encoding_type=IMPLICIT;
+  field2.value_type=REFERENCE_TYPE;
+  field2.reference_type="Payload";
+
+  field_t payload={0};	
+  payload.name="Payload";
+  payload.tag_class=UNIVERSAL;
+  payload.value_type=SEQUENCE;
+  payload.pc=CONSTRUCTED;
+
+  field_t payload_flag = {0};
+  payload_flag.name = "flag";
+  payload_flag.tag_class=UNIVERSAL;
+  payload_flag.value_type = BOOLEAN;
+  payload_flag.required = true;
+
+
+  field_t payload_value = {0};
+  payload_value.name = "value";
+  payload_value.tag_class=UNIVERSAL;
+  payload_value.value_type = INTEGER;
+  payload_value.required = true;
+
+
+  add_field(&parent_field,&field1);
+  add_field(&parent_field,&field2);
+
+  add_field(&payload,&payload_flag);
+  add_field(&payload,&payload_value);
+
+  add_field(&field2,&payload);
+
+  uint8_t buf[]={0x30,0x0B,0x02,0x01,0x05,0xA0,0x06,0x01,0x01,0xFF,0x02,0x01,0x2A};
+
+  int len = ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
+  tlv_node_t *root =build_tlv(actual);
+  field_value_t *value=NULL;
+  bool is_valid=validate_schema(&parent_field,root,&value);
+  print_debug(is_valid,buf,len,root,&parent_field,value);
+  TEST_ASSERT_EQUAL(true,is_valid);
+
+  TEST_ASSERT_EQUAL_PTR(value->field,&parent_field);
+  TEST_ASSERT_EQUAL_INT(2,value->count);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->field,&field2);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,&root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->field,&payload_flag);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->tlv,&root->children[1].children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->field,&payload_value);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->tlv,&root->children[1].children[1]);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -1288,5 +1379,6 @@ int main(void)
   RUN_TEST(test_bind_choice);
   RUN_TEST(test_bind_choice_with_sequence);
   RUN_TEST(test_bind_choice_with_explicit);
+  RUN_TEST(test_bind_implicit_sequence);
   return UNITY_END();
 }
