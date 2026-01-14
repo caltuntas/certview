@@ -116,10 +116,10 @@ void print_field_value(field_value_t *value,int indent)
     for(int i=0; i<value->tlv->tlv.len; i++) {
       printf("%02X,",*(value->tlv->tlv.value+i));
     }
-  } else if(value->tlv && value->tlv->count>0){
-    tlv_node_t node=value->tlv->children[0];
-    for(int i=0; i<node.tlv.len; i++) {
-      printf("%02X,",*(node.tlv.value+i));
+  } else if(value->field->pc!=CONSTRUCTED && value->tlv && value->tlv->count>0){
+    tlv_node_t *node=value->tlv->children[0];
+    for(int i=0; i<node->tlv.len; i++) {
+      printf("%02X,",*(node->tlv.value+i));
     }
     //print_node_values(value->tlv,0);
   }
@@ -167,7 +167,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     }
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
-      if (validate_schema(option_field,tlv,out)) {
+      if (validate_schema(option_field,tlv,&parent_value)) {
         create_add_field_value(parent_value,option_field,tlv);
         return true;
       }
@@ -182,8 +182,8 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
 
         if(tlv->count<=0) 
           return false;
-        tlv_node_t child=tlv->children[0];
-        if(child.tlv.tag.number!=field->value_type)
+        tlv_node_t *child=tlv->children[0];
+        if(child->tlv.tag.number!=field->value_type)
           return false;
         if(field->tag_number!=t.number)
           return false;
@@ -213,7 +213,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
           return false;
         if(field->tag_number!=tlv->tlv.tag.number)
           return false;
-        tlv=&tlv->children[0];
+        tlv=tlv->children[0];
       }else{
         if(field->value_type!=tlv->tlv.tag.number)
           return false;
@@ -233,11 +233,14 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
             return false;
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
-            tlv_node_t item=tlv->children[i];
-            if (validate_schema(item_field,&item,out)==false)
+            tlv_node_t *item=tlv->children[i];
+            if (validate_schema(item_field,item,&parent_value)==false)
               return false;
+            else {
+              //create_add_field_value(parent_value,item_field,&item);
+            }
           }
-          return true;
+          //return true;
         }
         //SEQUENCE
         else {
@@ -246,14 +249,14 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
             field_t *f=field->children[i];
             tlv_node_t* tn=NULL;
             if(tlv->count>0 && tlv_index<tlv->count)
-              tn=&tlv->children[tlv_index];
+              tn=tlv->children[tlv_index];
             int required_count=0;
             for (int j=i; j<field->count; j++) {
               if (field->children[j]->required)
                 required_count++;
             }
             int values_left=tlv->count-tlv_index;
-            bool matches=validate_schema(f,tn,out);
+            bool matches=validate_schema(f,tn,&parent_value);
             //required field and has no default value
             if (f->required && f->has_default==false) {
               if (matches==false)
@@ -293,11 +296,14 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
             return false;
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
-            tlv_node_t item=tlv->children[i];
-            if (validate_schema(item_field,&item,out)==false)
+            tlv_node_t *item=tlv->children[i];
+            if (validate_schema(item_field,item,&parent_value)==false)
               return false;
+            else {
+              //create_add_field_value(parent_value,item_field,&item);
+            }
           }
-          return true;
+          //return true;
         }
       }
     }

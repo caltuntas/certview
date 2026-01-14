@@ -80,7 +80,7 @@ typedef struct {
 
 typedef struct tlv_node_t {
   tlv_t tlv;
-  struct tlv_node_t* children;
+  struct tlv_node_t **children;
   size_t count;
 } tlv_node_t;
 

@@ -716,13 +716,13 @@ static void test_validate_sequence_of()
 }
 
 /*
-   Name ::= SEQUENCE OF RelativeDistinguishedName
-   RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
-   AttributeTypeAndValue ::= SEQUENCE {
-   type    OBJECT IDENTIFIER,
-   value   ANY
-   }
-   */
+Name ::= SEQUENCE OF RelativeDistinguishedName
+RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
+AttributeTypeAndValue ::= SEQUENCE {
+  type    OBJECT IDENTIFIER,
+  value   ANY
+}
+*/
 static void test_validate_set()
 {
   field_t parent = {0};
@@ -780,10 +780,7 @@ static void test_validate_set()
     snprintf(msg, 20, "case=%d\n", i);
     field_value_t *out=NULL;
     bool is_valid = validate_schema(&parent, root,&out);
-    if(is_valid!=tc.result){
-      print_field(&parent,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
   }
 }
@@ -978,10 +975,7 @@ static void test_validate_complex()
     snprintf(msg, 20, "case=%d\n", i);
     field_value_t *out=NULL;
     bool is_valid = validate_schema(&final_test, root,&out);
-    if(is_valid!=tc.result){
-      print_field(&final_test,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&final_test,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
   }
 }
@@ -1015,16 +1009,18 @@ static void test_bind_sequence()
 
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
 
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf, len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
-  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root->children[0]);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
-  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,&tlv_root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,tlv_root->children[1]);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->field,&field2);
 }
 
@@ -1064,18 +1060,20 @@ static void test_bind_sequence_with_optional()
 
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x03};
 
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf, len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
-  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root->children[0]);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,NULL);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->field,&field2);
-  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv,&tlv_root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv,tlv_root->children[1]);
   TEST_ASSERT_EQUAL_PTR(value->children[2]->field,&field3);
 }
 
@@ -1116,18 +1114,20 @@ static void test_bind_sequence_with_default()
 
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x03};
 
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
-  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,tlv_root->children[0]);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,NULL);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->field,&field2);
-  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv,&tlv_root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv,tlv_root->children[1]);
   TEST_ASSERT_EQUAL_PTR(value->children[2]->field,&field3);
 }
 
@@ -1159,10 +1159,12 @@ static void test_bind_choice()
 
   uint8_t buf[]={0x02,0x01,0x05};
 
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf, len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
@@ -1215,12 +1217,12 @@ static void test_bind_choice_with_sequence()
 
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
 
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
-  print_field(&parent,0);
-  print_tlv_node(tlv_root,0);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
@@ -1261,11 +1263,12 @@ static void test_bind_choice_with_explicit()
   add_field(&parent,&field2);
 
   uint8_t buf[]={0xA1,0x03,0x02,0x01,0x05};
-
-  tlv_t actual = parse_tlv(buf, ARRAY_LEN(buf));
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
+  print_debug(is_valid,buf,len,tlv_root,&parent,value);
   TEST_ASSERT_EQUAL(true, is_valid);
 
   TEST_ASSERT_EQUAL_PTR(value->field,&parent);
@@ -1348,13 +1351,13 @@ static void test_bind_implicit_sequence(void)
   TEST_ASSERT_EQUAL_PTR(value->field,&parent_field);
   TEST_ASSERT_EQUAL_INT(2,value->count);
   TEST_ASSERT_EQUAL_PTR(value->children[0]->field,&field1);
-  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,&root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv,root->children[0]);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->field,&field2);
-  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,&root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv,root->children[1]);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->field,&payload_flag);
-  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->tlv,&root->children[1].children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->tlv,root->children[1]->children[0]);
   TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->field,&payload_value);
-  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->tlv,&root->children[1].children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->tlv,root->children[1]->children[1]);
 }
 
 int main(void)

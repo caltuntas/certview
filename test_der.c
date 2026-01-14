@@ -101,17 +101,17 @@ static void test_build_tlv_tree(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,2);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,(buf+7));
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value,(buf+7));
 }
 
 static void test_build_tlv_nested_sequence(void)
@@ -126,17 +126,17 @@ static void test_build_tlv_nested_sequence(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value,(buf+6));
 }
 
 static void test_build_tlv_nested_context_specific(void)
@@ -151,23 +151,23 @@ static void test_build_tlv_nested_context_specific(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,2);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,CONTEXT_SPECIFIC);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,0);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,CONTEXT_SPECIFIC);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value,(buf+6));
 
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,(buf+9));
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value,(buf+9));
 }
 
 static void test_build_tlv_nested_oid(void)
@@ -182,11 +182,11 @@ static void test_build_tlv_nested_oid(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,2);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,2);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 }
 
 static void test_build_tlv_nested_oid_multi_byte(void)
@@ -201,11 +201,11 @@ static void test_build_tlv_nested_oid_multi_byte(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 }
 
 static void test_build_tlv_nested_null_type(void)
@@ -220,17 +220,17 @@ static void test_build_tlv_nested_null_type(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,2);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,9);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,9);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,NULL_VALUE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,0);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,NULL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number,NULL_VALUE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len,0);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value,NULL);
 }
 
 static void test_build_tlv_nested_multiple_null_types(void)
@@ -245,23 +245,23 @@ static void test_build_tlv_nested_multiple_null_types(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,3);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,8);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,8);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,NULL_VALUE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,0);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,NULL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number,NULL_VALUE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len,0);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value,NULL);
 
-  TEST_ASSERT_EQUAL_INT(root->children[2].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[2].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[2].tlv.tag.number,NULL_VALUE);
-  TEST_ASSERT_EQUAL_INT(root->children[2].tlv.len,0);
-  TEST_ASSERT_EQUAL_PTR(root->children[2].tlv.value,NULL);
+  TEST_ASSERT_EQUAL_INT(root->children[2]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[2]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[2]->tlv.tag.number,NULL_VALUE);
+  TEST_ASSERT_EQUAL_INT(root->children[2]->tlv.len,0);
+  TEST_ASSERT_EQUAL_PTR(root->children[2]->tlv.value,NULL);
 }
 
 static void test_build_tlv_optional(void)
@@ -276,17 +276,17 @@ static void test_build_tlv_optional(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,CONTEXT_SPECIFIC);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,0);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,CONTEXT_SPECIFIC);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value,(buf+6));
 }
 
 static void test_build_tlv_explicit(void)
@@ -301,31 +301,31 @@ static void test_build_tlv_explicit(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,11);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
-  TEST_ASSERT_EQUAL_INT(root->children[0].count,1);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,11);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,9);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].count,2);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len,9);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->count,2);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].children[0].tlv.value,(buf+8));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->children[0]->tlv.value,(buf+8));
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[1].tlv.tag.number,OCTET_STRING);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].children[1].tlv.len,2);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].children[1].tlv.value,(buf+13));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[1]->tlv.tag.number,OCTET_STRING);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->children[1]->tlv.len,2);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->children[1]->tlv.value,(buf+13));
 }
 
 static void test_build_tlv_explicit_nested(void)
@@ -340,19 +340,19 @@ static void test_build_tlv_explicit_nested(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
   TEST_ASSERT_EQUAL_INT(root->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,3);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
-  TEST_ASSERT_EQUAL_INT(root->children[0].count,1);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,3);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->count,1);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value,(buf+6));
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].count,0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->count,0);
 }
 
 static void test_build_tlv_octet_string(void)
@@ -367,19 +367,19 @@ static void test_build_tlv_octet_string(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+4));
   TEST_ASSERT_EQUAL_INT(root->count,2);
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,10);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+6));
-  TEST_ASSERT_EQUAL_INT(root->children[0].count,0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,10);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->count,0);
 
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number,OCTET_STRING);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len,244);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value,(buf+19));
-  TEST_ASSERT_EQUAL_INT(root->children[1].count,0);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number,OCTET_STRING);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len,244);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value,(buf+19));
+  TEST_ASSERT_EQUAL_INT(root->children[1]->count,0);
 }
 
 static void test_build_tlv_constructed(void)
@@ -395,12 +395,12 @@ static void test_build_tlv_constructed(void)
   TEST_ASSERT_EQUAL_INT(root->count,1);
   TEST_ASSERT_EQUAL_PTR(root->tlv.value,(buf+2));
 
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class,UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type,PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number,INTEGER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len,1);
-  TEST_ASSERT_EQUAL_INT(root->children[0].count,0);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value,(buf+4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class,UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type,PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number,INTEGER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len,1);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->count,0);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value,(buf+4));
 }
 
 static void test_build_tlv_rsa_encryption(void)
@@ -417,33 +417,33 @@ static void test_build_tlv_rsa_encryption(void)
   TEST_ASSERT_EQUAL_PTR(root->tlv.value, (buf + 2));
   TEST_ASSERT_EQUAL_INT(root->count, 2);
   
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.class, UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.type, CONSTRUCTED);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.tag.number, SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].tlv.len, 13);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].tlv.value, (buf + 4));
-  TEST_ASSERT_EQUAL_INT(root->children[0].count, 2);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.type, CONSTRUCTED);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.tag.number, SEQUENCE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->tlv.len, 13);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->tlv.value, (buf + 4));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->count, 2);
   
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.class, UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.type, PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.tag.number, OBJECT_IDENTIFIER);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].tlv.len, 9);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[0].tlv.value, (buf + 6));
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[0].count, 0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.tag.number, OBJECT_IDENTIFIER);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->tlv.len, 9);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[0]->tlv.value, (buf + 6));
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[0]->count, 0);
   
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.class, UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.type, PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.tag.number, NULL_VALUE);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].tlv.len, 0);
-  TEST_ASSERT_EQUAL_PTR(root->children[0].children[1].tlv.value, NULL);
-  TEST_ASSERT_EQUAL_INT(root->children[0].children[1].count, 0);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[1]->tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[1]->tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[1]->tlv.tag.number, NULL_VALUE);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[1]->tlv.len, 0);
+  TEST_ASSERT_EQUAL_PTR(root->children[0]->children[1]->tlv.value, NULL);
+  TEST_ASSERT_EQUAL_INT(root->children[0]->children[1]->count, 0);
   
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.class, UNIVERSAL);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.type, PRIMITIVE);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.tag.number, BIT_STRING);
-  TEST_ASSERT_EQUAL_INT(root->children[1].tlv.len, 1);
-  TEST_ASSERT_EQUAL_PTR(root->children[1].tlv.value, (buf + 19));
-  TEST_ASSERT_EQUAL_INT(root->children[1].count, 0);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.class, UNIVERSAL);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.type, PRIMITIVE);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.tag.number, BIT_STRING);
+  TEST_ASSERT_EQUAL_INT(root->children[1]->tlv.len, 1);
+  TEST_ASSERT_EQUAL_PTR(root->children[1]->tlv.value, (buf + 19));
+  TEST_ASSERT_EQUAL_INT(root->children[1]->count, 0);
 }
 
 int main(void)

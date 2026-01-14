@@ -30,7 +30,7 @@ void print_tlv_node(tlv_node_t *node,int indent)
   }
   printf("\n");
   for(int i=0; i<node->count; i++){
-    print_tlv_node(&node->children[i],indent+1);
+    print_tlv_node(node->children[i],indent+1);
   }
 }
 
@@ -56,7 +56,7 @@ void print_node_values(tlv_node_t *node,int indent)
   }
   printf("\n");
   for(int i=0; i<node->count; i++){
-    print_node_values(&node->children[i],indent+1);
+    print_node_values(node->children[i],indent+1);
   }
 }
 
@@ -100,31 +100,38 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
 	return tlv;
 }
 
+tlv_node_t* create_node(tlv_t t)
+{
+  tlv_node_t *node=calloc(1,sizeof(*node));
+  node->tlv=t;
+  return node;
+}
+
+void add_node(tlv_node_t *parent, tlv_node_t *child)
+{
+  size_t cnt=parent->count;
+  parent->children=realloc(parent->children,sizeof(tlv_node_t*)*(parent->count+1));
+  parent->children[cnt]=child;
+  parent->count+=1;
+}
+
+
 //TODO:check child length cannot be greater than parent length
 tlv_node_t* build_tlv(tlv_t tlv)
 {
-  tlv_node_t* node=malloc(sizeof(*node));
-  node->tlv=tlv;
+  tlv_node_t* node=create_node(tlv);
   size_t len=tlv.len;
   uint8_t *value_ptr = tlv.value;
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
     while(value_ptr!=NULL && value_ptr < tlv.value+tlv.len-1) {
-      node->children=realloc(node->children,sizeof(tlv_node_t)*(node->count+1));
       tlv_t child = parse_tlv(value_ptr,len);
       tlv_node_t* childNode=build_tlv(child);
-      node->children[count].tlv.tag.class = childNode->tlv.tag.class;
-      node->children[count].tlv.tag.number = childNode->tlv.tag.number;
-      node->children[count].tlv.tag.type = childNode->tlv.tag.type;
-      node->children[count].tlv.len= childNode->tlv.len;
-      node->children[count].tlv.len_meta= childNode->tlv.len_meta;
-      node->children[count].tlv.value= childNode->tlv.value;
-      node->children[count].children= childNode->children;
-      node->children[count].count= childNode->count;
+      add_node(node,childNode);
       if(childNode->tlv.value==NULL && childNode->tlv.len==0)
         value_ptr=value_ptr+2;
       else
-        value_ptr=node->children[count].tlv.value+node->children[count].tlv.len;
+        value_ptr=node->children[count]->tlv.value+node->children[count]->tlv.len;
       len=child.len;
       count++;
       node->count=count;
