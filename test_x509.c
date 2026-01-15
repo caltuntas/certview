@@ -21,31 +21,6 @@ void tearDown(void)
 {
 }
 
-void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value)
-{
-  static int counter=1;
-  printf("#######Case %d############\n",counter++);
-  printf("---ASN1 Definition---\n");
-  print_field(field,0);
-  printf("\n");
-  printf("---Raw Data---\n");
-  print_data(data,data_len);
-  printf("\n");
-  printf("---Parsed Der---\n");
-  print_tlv_node(node,0);
-  if(valid){
-    printf("\n");
-    printf("---Mapped Values---\n");
-    print_field_value(value,0);
-    printf("\n");
-  } else {
-    printf("\n");
-    printf("---Mapped Values---\n");
-    printf("Invalid structure!\n");
-  }
-  printf("#######################\n");
-}
-
 /*
    AlgorithmIdentifier ::= SEQUENCE {
    algorithm   OBJECT IDENTIFIER,
@@ -707,10 +682,7 @@ static void test_validate_sequence_of()
     snprintf(msg, 20, "case=%d\n", i);
     field_value_t *out=NULL;
     bool is_valid = validate_schema(&parent, root,&out);
-    if(is_valid!=tc.result){
-      print_field(&parent,0);
-      print_tlv_node(root,0);
-    }
+    print_debug(is_valid,tc.data,tc.len,root,&parent,out);
     TEST_ASSERT_EQUAL_MESSAGE(tc.result, is_valid, msg);
   }
 }
@@ -1360,6 +1332,84 @@ static void test_bind_implicit_sequence(void)
   TEST_ASSERT_EQUAL_PTR(value->children[1]->children[1]->tlv,root->children[1]->children[1]);
 }
 
+/*
+Validity ::= SEQUENCE {
+  notBefore ::= Time,
+  notAfter  ::= Time
+}
+
+Time ::= CHOICE {
+  utcTime        UTCTime,
+  generalTime    GeneralizedTime
+}
+*/
+static void test_bind_validity_choice_utctime()
+{
+  field_t validity = {0};
+  validity.name = "Validity";
+  validity.value_type = SEQUENCE;
+  validity.pc = CONSTRUCTED;
+  validity.required = true;
+
+  field_t notBefore = {0};
+  notBefore.name = "notBefore";
+  notBefore.value_type = REFERENCE_TYPE;
+  notBefore.reference_type = "Time";
+  notBefore.required = true;
+
+  field_t notAfter = {0};
+  notAfter.name = "notAfter";
+  notAfter.value_type = REFERENCE_TYPE;
+  notAfter.reference_type = "Time";
+  notAfter.required = true;
+
+  field_t time={0};	
+  time.name="Time";
+  time.value_type=CHOICE;
+  time.required=true;
+
+  field_t utcTime = {0};
+  utcTime.name = "utcTime";
+  utcTime.value_type = UTCTime;
+  utcTime.required = true;
+
+  field_t generalTime = {0};
+  generalTime.name = "generalTime";
+  generalTime.value_type = GeneralizedTime;
+  generalTime.required = true;
+
+  add_field(&validity, &notBefore);
+  add_field(&validity, &notAfter);
+
+  add_field(&time, &utcTime);
+  add_field(&time, &generalTime);
+
+  add_field(&notBefore, &time);
+  add_field(&notAfter, &time);
+
+  uint8_t buf[] = {0x30,0x1E,0x17,0x0D,'2','5','1','2','1','6','1','9','3','9','3','2','Z',0x17,0x0D,'2','6','0','3','1','6','1','8','3','2','4','4','Z'};
+
+  size_t len = ARRAY_LEN(buf);
+
+  tlv_t actual = parse_tlv(buf, len);
+  tlv_node_t *tlv_root = build_tlv(actual);
+
+  field_value_t *value = NULL;
+  bool is_valid = validate_schema(&validity, tlv_root, &value);
+
+  print_debug(is_valid, buf, len, tlv_root, &validity, value);
+  TEST_ASSERT_EQUAL(true, is_valid);
+
+  TEST_ASSERT_EQUAL_PTR(value->field, &validity);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field, &time);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->field, &time);
+
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->children[0]->field, &utcTime);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->children[0]->tlv, tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->field, &utcTime);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->tlv, tlv_root->children[1]);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -1383,5 +1433,6 @@ int main(void)
   RUN_TEST(test_bind_choice_with_sequence);
   RUN_TEST(test_bind_choice_with_explicit);
   RUN_TEST(test_bind_implicit_sequence);
+  RUN_TEST(test_bind_validity_choice_utctime);
   return UNITY_END();
 }

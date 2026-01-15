@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "der.h"
+#include "x509.h"
 
 
 
@@ -29,8 +30,11 @@ int main(int argc, char **argv)
 
   tlv_t tlv = parse_tlv(buffer,len);
   tlv_node_t *root =build_tlv(tlv);
+  field_t *parent=create_x509_definition();
 
-  print_tlv_node(root,0);
+  field_value_t *mapping=NULL;
+  bool is_valid=validate_schema(parent,root,&mapping);
+  print_debug(is_valid,buffer,len,root,parent,mapping);
 
   return EXIT_SUCCESS;
 }
