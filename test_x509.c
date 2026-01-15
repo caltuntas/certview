@@ -1410,6 +1410,67 @@ static void test_bind_validity_choice_utctime()
   TEST_ASSERT_EQUAL_PTR(value->children[1]->children[0]->tlv, tlv_root->children[1]);
 }
 
+/*
+  TestSeq ::= SEQUENCE {
+    id         INTEGER,
+    extensions [3] EXPLICIT ANY OPTIONAL,
+    tail       INTEGER
+  }
+*/
+static void test_explicit_any_consumption()
+{
+  field_t test_seq = {0};
+  test_seq.name = "TestSeq";
+  test_seq.value_type = SEQUENCE;
+  test_seq.pc = CONSTRUCTED;
+  test_seq.required = true;
+
+  field_t id = {0};
+  id.name = "id";
+  id.value_type = INTEGER;
+  id.required = true;
+
+  field_t extensions = {0};
+  extensions.name = "extensions";
+  extensions.tag_class = CONTEXT_SPECIFIC;
+  extensions.tag_number = 3;
+  extensions.encoding_type = EXPLICIT;
+  extensions.value_type = ANY;
+  extensions.required = false;
+
+  field_t tail = {0};
+  tail.name = "tail";
+  tail.value_type = INTEGER;
+  tail.required = true;
+
+  add_field(&test_seq, &id);
+  add_field(&test_seq, &extensions);
+  add_field(&test_seq, &tail);
+
+  uint8_t buf[] = {0x30,0x0E,0x02,0x01,0x01,0xA3,0x07,0x30,0x05,0x02,0x01,0x2A,0x02,0x00,0x02,0x01,0x02 };
+  size_t len = ARRAY_LEN(buf);
+
+  tlv_t actual = parse_tlv(buf, len);
+  tlv_node_t *tlv_root = build_tlv(actual);
+
+  field_value_t *value = NULL;
+  bool is_valid = validate_schema(&test_seq, tlv_root, &value);
+  print_debug(is_valid, buf, len, tlv_root, &test_seq, value);
+
+  TEST_ASSERT_EQUAL(true, is_valid);
+
+  TEST_ASSERT_EQUAL_PTR(value->field, &test_seq);
+
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field, &id);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv, tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->field, &extensions);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv, tlv_root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->field, &tail);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv, tlv_root->children[2]);
+
+  TEST_ASSERT_EQUAL(0, value->children[1]->count);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -1434,5 +1495,6 @@ int main(void)
   RUN_TEST(test_bind_choice_with_explicit);
   RUN_TEST(test_bind_implicit_sequence);
   RUN_TEST(test_bind_validity_choice_utctime);
+  RUN_TEST(test_explicit_any_consumption);
   return UNITY_END();
 }

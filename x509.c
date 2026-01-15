@@ -183,7 +183,11 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     }
     return false;
   }else if(field->value_type==ANY){
-    return true;
+    //TODO:duplicated implicit and explicit checks are everywhere
+    if(field->encoding_type==IMPLICIT || field->encoding_type==EXPLICIT) {
+      if(field->tag_number!=tlv->tlv.tag.number)
+        return false;
+    }
   }else {
     tag_t t=tlv->tlv.tag;
     if(field->pc==PRIMITIVE){
