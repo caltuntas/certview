@@ -340,6 +340,7 @@ TBSCertificate ::= SEQUENCE {
   validity             Validity,
   subject              Name,
   subjectPublicKeyInfo SubjectPublicKeyInfo
+  extensions      [3]  EXPLICIT Extensions OPTIONAL
 }
 
 AlgorithmIdentifier ::= SEQUENCE {
@@ -370,7 +371,15 @@ SubjectPublicKeyInfo ::= SEQUENCE {
   algorithm         AlgorithmIdentifier,
   subjectPublicKey  BIT STRING
 }
- */
+
+Extensions ::= SEQUENCE OF Extension
+
+Extension ::= SEQUENCE {
+  extnID     OBJECT IDENTIFIER,
+  critical   BOOLEAN OPTIONAL,
+  extnValue  OCTET STRING
+}
+*/
 field_t* create_x509_definition()
 {
   field_t *algorithm_identifier =create_field();
@@ -553,13 +562,54 @@ field_t* create_x509_definition()
   tbs_spki->reference_type = "SubjectPublicKeyInfo";
   tbs_spki->required = true;
 
-  field_t *tbs_extensions = create_field();
+
+  field_t *extension =create_field();
+  extension->name = "Extension";
+  extension->value_type = SEQUENCE;
+  extension->pc = CONSTRUCTED;
+  extension->required = true;
+
+  field_t *extnID =create_field();
+  extnID->name = "extnID";
+  extnID->value_type = OBJECT_IDENTIFIER;
+  extnID->required = true;
+
+  field_t *critical =create_field();
+  critical->name = "critical";
+  critical->value_type = BOOLEAN;
+  critical->required = false;
+  critical->has_default = true;   // DEFAULT FALSE
+
+  field_t *extnValue =create_field();
+  extnValue->name = "extnValue";
+  extnValue->value_type = OCTET_STRING;
+  extnValue->required = true;
+
+  add_field(extension, extnID);
+  add_field(extension, critical);
+  add_field(extension, extnValue);
+
+
+  field_t *extensions_seq =create_field();
+  extensions_seq->name = "Extensions";
+  extensions_seq->value_type = SEQUENCE;
+  extensions_seq->pc = CONSTRUCTED;
+  extensions_seq->element_type = REFERENCE_TYPE;
+  extensions_seq->reference_type = "Extension";
+  extensions_seq->required = true;
+
+  add_field(extensions_seq, extension);
+
+  field_t *tbs_extensions =create_field();
   tbs_extensions->name = "extensions";
   tbs_extensions->tag_class = CONTEXT_SPECIFIC;
   tbs_extensions->tag_number = 3;
   tbs_extensions->encoding_type = EXPLICIT;
-  tbs_extensions->value_type = ANY;
+  tbs_extensions->value_type = REFERENCE_TYPE;
+  tbs_extensions->reference_type = "Extensions";
   tbs_extensions->required = false;
+
+  add_field(tbs_extensions, extensions_seq);
 
   add_field(tbs, tbs_version);
   add_field(tbs, tbs_serial);
