@@ -32,6 +32,9 @@ typedef struct field_value_t {
   tlv_node_t *tlv;
   size_t count;
   struct field_value_t **children;
+  union {
+    int integer; 
+  } value;
 } field_value_t;
 
 void print_field(field_t *field,int indent);
@@ -40,5 +43,6 @@ void add_field(field_t *parent, field_t *child);
 bool validate_schema(field_t *parent,tlv_node_t *tlv,field_value_t **out);
 field_t* create_x509_definition();
 void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value);
+void decode(field_value_t *value);
 
 #endif

@@ -9,6 +9,9 @@ test:
 	gcc -g test-framework/unity.c der.c x509.c test_x509.c -o test_x509.out
 	./test_x509.out
 
+	gcc -g test-framework/unity.c bigint.c test_bigint.c -o test_bigint.out
+	./test_bigint.out
+
 clean:
 	rm -rf *.out *.o *.dSYM
 

@@ -151,6 +151,7 @@ void print_field_value(field_value_t *value,int indent)
   }
 }
 
+//TODO:handle primitive type mapping, example standalone integer,string etc.
 bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
 {
   if(field->required && tlv==NULL)
@@ -684,3 +685,30 @@ void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,fiel
   printf("#######################\n");
 }
 
+uint32_t convert_to_uint32(uint8_t *arr,size_t len) {
+  uint32_t res = 0;
+  for(int i=0; i<len; i++){
+    res |=arr[i] << (8*i);
+  }
+  /*
+  res |= arr[0] << 24;
+  res |= arr[1] << 16;
+  res |= arr[2] << 8;
+  res |= arr[3] << 0;
+  */
+  return res;
+}
+
+void decode(field_value_t *value)
+{
+  if(value->count<=0){
+    if(value->field->value_type==INTEGER) {
+      value->value.integer=convert_to_uint32(value->tlv->tlv.value,value->tlv->tlv.len);      
+    }
+  }
+
+  for(int i=0; i<value->count; i++){
+    field_value_t *child_val=value->children[i];
+    decode(child_val);
+  }
+}
