@@ -11,6 +11,12 @@ typedef struct {
   char *result;
 } test_case_mul;
 
+typedef struct {
+  uint8_t *hex;
+  size_t length;
+  char *result;
+} test_case_hex_to_decimal;
+
 void setUp(void)
 {
 }
@@ -46,6 +52,23 @@ static void test_mul(void)
 }
 
 
+static void test_hex_to_decimal(void)
+{
+	test_case_hex_to_decimal cases[] = {
+		{(uint8_t[]){0xFA,0xCE},2,"64206"},
+		{(uint8_t[]){0xFF,0xFF,0xFF,0xFF},4,"4294967295"},
+		{(uint8_t[]){0x01,0x00,0x00,0x00,0x00},5,"4294967296"},
+		{(uint8_t[]){0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},8,"18446744073709551615"},
+	};
+	size_t len=ARRAY_LEN(cases);
+	for(int i=0; i<len; i++){
+		test_case_hex_to_decimal tc=cases[i];
+		char *result =hex_to_decimal_str(tc.hex,tc.length);
+		TEST_ASSERT_EQUAL_STRING(tc.result,result);
+	}
+}
+
+
 static void test_add(void)
 {
 	test_case_mul cases[] = {
@@ -72,5 +95,6 @@ int main(void)
 	RUN_TEST(test_zero);
 	RUN_TEST(test_mul);
 	RUN_TEST(test_add);
+	RUN_TEST(test_hex_to_decimal);
   return UNITY_END();
 }

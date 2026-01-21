@@ -108,3 +108,31 @@ char *mul(char *x, char *y)
   }
   return total;
 }
+
+//https://en.wikipedia.org/wiki/Horner%27s_method
+char *hex_to_decimal_str(uint8_t *hex,size_t len)
+{
+  int ibase=16;
+  char *ibase_str="16";
+  int total;
+  char *res=NULL;
+  for(int i=0; i<len; i++){
+    int part1=(hex[i] >> 4) & 0x0F;
+    int part2=(hex[i]) & 0x0F;
+    char num1[10];
+    sprintf(num1,"%d",part1);
+    char num2[10];
+    sprintf(num2,"%d",part2);
+    if(i==0){
+      //total=part1*ibase+part2;
+      res=add(mul(num1,ibase_str),num2);
+    }else {
+      //total=total*ibase+part1;
+      //total=total*ibase+part2;
+      res=add(mul(res,ibase_str),num1);
+      res=add(mul(res,ibase_str),num2);
+    }
+  }
+  return res;
+}
+
