@@ -59,6 +59,8 @@ static void test_hex_to_decimal(void)
 		{(uint8_t[]){0xFF,0xFF,0xFF,0xFF},4,"4294967295"},
 		{(uint8_t[]){0x01,0x00,0x00,0x00,0x00},5,"4294967296"},
 		{(uint8_t[]){0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},8,"18446744073709551615"},
+		//{(uint8_t[]){0xFF},1,"-1"},
+		//{(uint8_t[]){0x80},1,"-128"},
 	};
 	size_t len=ARRAY_LEN(cases);
 	for(int i=0; i<len; i++){
@@ -88,6 +90,34 @@ static void test_add(void)
 	}
 }
 
+static void test_subtract(void)
+{
+  test_case_mul cases[] = {
+    {"5", "3", "2"},
+    {"10", "4", "6"},
+    {"100", "50", "50"},
+    {"163", "57", "106"},
+    {"163", "67", "96"},
+    {"10", "1", "9"},
+    {"100", "1", "99"},
+    {"1000", "1", "999"},
+    {"1000", "1", "999"},
+    {"10000", "1", "9999"},
+    {"100000", "1", "99999"},
+    {"1000", "999", "1"},
+    {"10000", "9999", "1"},
+    {"100000", "99999", "1"},
+    {"1000000", "999999", "1"},
+    {"123456789012345678901234567890", "123456789012345678901234567889", "1"},
+  };
+
+  size_t len = ARRAY_LEN(cases);
+  for (int i = 0; i < len; i++) {
+    test_case_mul tc = cases[i];
+    char *result = sub(tc.x, tc.y);
+    TEST_ASSERT_EQUAL_STRING(tc.result, result);
+  }
+}
 
 int main(void)
 {
@@ -96,5 +126,6 @@ int main(void)
 	RUN_TEST(test_mul);
 	RUN_TEST(test_add);
 	RUN_TEST(test_hex_to_decimal);
+	RUN_TEST(test_subtract);
   return UNITY_END();
 }

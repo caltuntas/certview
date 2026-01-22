@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "bigint.h"
 
 bigint_t *create_bigint(uint8_t *buf,size_t len)
@@ -109,9 +110,24 @@ char *mul(char *x, char *y)
   return total;
 }
 
+void ltrim(char *str,char chr)
+{
+  char *ptr =str;
+  int len=strlen(str);
+  while(*ptr && *ptr==chr) {
+    ++ptr, --len;
+  }
+  memmove(str, ptr, len + 1);
+}
+
 //https://en.wikipedia.org/wiki/Horner%27s_method
 char *hex_to_decimal_str(uint8_t *hex,size_t len)
 {
+  bool is_negative=false;
+  //check if it is negative
+  if((hex[0] & 0x80)==0x80) {
+    is_negative=true;
+  }
   int ibase=16;
   char *ibase_str="16";
   int total;
@@ -124,11 +140,8 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
     char num2[10];
     sprintf(num2,"%d",part2);
     if(i==0){
-      //total=part1*ibase+part2;
       res=add(mul(num1,ibase_str),num2);
     }else {
-      //total=total*ibase+part1;
-      //total=total*ibase+part2;
       res=add(mul(res,ibase_str),num1);
       res=add(mul(res,ibase_str),num2);
     }
@@ -136,3 +149,49 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
   return res;
 }
 
+char *sub(char *x, char *y)
+{
+  int obase=10;
+  int len_x=strlen(x);
+  int len_y=strlen(y);
+  char *res=calloc(len_x+len_y+2,sizeof(char));
+  int borrow=0;
+  int len=len_x>len_y?len_x:len_y;
+  int diff=abs(len_x-len_y);
+  for (int i=len-1; i>=0; i--){
+    int digit_y=0;
+    int digit_x=0;
+    int d=i-diff;
+
+    if(len_x>len_y) {
+      digit_x=x[i]-'0';
+      if(d>=0)
+        digit_y=y[i-diff]-'0';
+    } else if (len_x<len_y) {
+      if(d>=0)
+        digit_x=x[i-diff]-'0';
+      digit_y=y[i]-'0';
+    } else {
+      digit_x=x[i]-'0';
+      digit_y=y[i]-'0';
+    }
+
+    digit_x=digit_x-borrow;
+    if(digit_x<digit_y)
+      borrow=1;
+    else 
+      borrow=0;
+    int sub=(borrow*obase+digit_x)-digit_y;
+    int digit=sub % obase;
+    if(digit==0 && i==0){
+      ltrim(res,'0');
+      return res;
+    }
+    char *str=strdup(res);
+    char chr=digit+'0';
+    strncpy(res,&chr,1);
+    strcpy(res+1,str);
+  }
+  ltrim(res,'0');
+  return res;
+}
