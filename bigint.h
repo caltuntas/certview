@@ -16,5 +16,6 @@ char *mul(char *x, char *y);
 char *add(char *x, char *y);
 char *sub(char *x, char *y);
 char *hex_to_decimal_str(uint8_t *hex,size_t len);
+int compare(char *x, char *y);
 
 #endif

@@ -146,34 +146,71 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
       res=add(mul(res,ibase_str),num2);
     }
   }
+  //https://en.wikipedia.org/wiki/Two%27s_complement
+  if(is_negative) {
+    uint8_t *inc=calloc(len+1,sizeof(uint8_t));
+    inc[0]=1;
+    char *val=hex_to_decimal_str(inc,len+1);
+    char *result=sub(res,val);
+    return result;
+  }
   return res;
+}
+
+int compare(char *x, char *y)
+{
+  size_t lenx=strlen(x);
+  size_t leny=strlen(y);
+  if(lenx<leny)
+    return -1;
+  else if(lenx>leny)
+    return 1;
+
+  int cmp=strcmp(x,y);
+  if(cmp>0) return 1;
+  else if(cmp<0) return -1;
+  else return 0;
 }
 
 char *sub(char *x, char *y)
 {
+  char *str1;
+  char *str2;
+  int cmp=compare(x,y);
+  bool is_negative=false;
+  if (cmp<0) {
+    is_negative=true;
+    str1=y;
+    str2=x;
+  } else if (cmp > 0) {
+    is_negative=false;
+    str1=x;
+    str2=y;
+  }
+
   int obase=10;
-  int len_x=strlen(x);
-  int len_y=strlen(y);
-  char *res=calloc(len_x+len_y+2,sizeof(char));
+  int len1=strlen(str1);
+  int len2=strlen(str2);
+  char *res=calloc(len1+len2+2,sizeof(char));
   int borrow=0;
-  int len=len_x>len_y?len_x:len_y;
-  int diff=abs(len_x-len_y);
+  int len=len1>len2?len1:len2;
+  int diff=abs(len1-len2);
   for (int i=len-1; i>=0; i--){
     int digit_y=0;
     int digit_x=0;
     int d=i-diff;
 
-    if(len_x>len_y) {
-      digit_x=x[i]-'0';
+    if(len1>len2) {
+      digit_x=str1[i]-'0';
       if(d>=0)
-        digit_y=y[i-diff]-'0';
-    } else if (len_x<len_y) {
+        digit_y=str2[i-diff]-'0';
+    } else if (len1<len2) {
       if(d>=0)
-        digit_x=x[i-diff]-'0';
-      digit_y=y[i]-'0';
+        digit_x=str1[i-diff]-'0';
+      digit_y=str2[i]-'0';
     } else {
-      digit_x=x[i]-'0';
-      digit_y=y[i]-'0';
+      digit_x=str1[i]-'0';
+      digit_y=str2[i]-'0';
     }
 
     digit_x=digit_x-borrow;
@@ -184,8 +221,7 @@ char *sub(char *x, char *y)
     int sub=(borrow*obase+digit_x)-digit_y;
     int digit=sub % obase;
     if(digit==0 && i==0){
-      ltrim(res,'0');
-      return res;
+      break;
     }
     char *str=strdup(res);
     char chr=digit+'0';
@@ -193,5 +229,10 @@ char *sub(char *x, char *y)
     strcpy(res+1,str);
   }
   ltrim(res,'0');
+  if(is_negative) {
+    len=strlen(res);
+    memmove(res+1, res, len+1);
+    res[0]='-';
+  }
   return res;
 }
