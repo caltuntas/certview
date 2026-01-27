@@ -17,9 +17,9 @@ char *bigint_to_decimal_str(bigint_t *bigint)
   return "0";
 }
 
-char *add(char *x, char *y)
+char *add(char *x, char *y,int base)
 {
-  int obase=10;
+  int obase=base;
   int len_x=strlen(x);
   int len_y=strlen(y);
   char *res=calloc(len_x+len_y+2,sizeof(char));
@@ -64,9 +64,57 @@ char *add(char *x, char *y)
   return res;
 }
 
-char *mul(char *x, char *y)
+bigint_t *add_bigint(bigint_t *num1, bigint_t *num2)
 {
-  int obase=10;
+  bigint_t *bi=malloc(sizeof(*bi));
+  int obase=256;
+  int len_x=num1->length;
+  int len_y=num2->length;
+  uint8_t *res=calloc(len_x+len_y+2,sizeof(char));
+  bi->data=res;
+  int carry=0;
+  int len=len_x>len_y?len_x:len_y;
+  int diff=abs(len_x-len_y);
+  int counter=0;
+  for (int i=len-1; i>=0; i--){
+    int digit_y=0;
+    int digit_x=0;
+    int d=i-diff;
+
+    if(len_x>len_y) {
+      digit_x=num1->data[i];
+      if(d>=0)
+        digit_y=num2->data[i-diff];
+    } else if (len_x<len_y) {
+      if(d>=0)
+        digit_x=num1->data[i-diff];
+      digit_y=num2->data[i];
+    } else {
+      digit_x=num1->data[i];
+      digit_y=num2->data[i];
+    }
+
+    int mul=digit_x+digit_y+carry;
+    carry=0;
+    int c=0; 
+    c=mul / obase; 
+    carry+=c;
+    int digit=mul % obase;
+    memmove(res+1, res, len+1);
+    res[0]=digit;
+    if(i==0 && c!=0){
+      memmove(res+1, res, len+1);
+      res[0]=c;
+      bi->length++;
+    }
+    bi->length++;
+  }
+  return bi;
+}
+
+char *mul(char *x, char *y,int base)
+{
+  int obase=base;
   int len_x=strlen(x);
   int len_y=strlen(y);
   char *res=calloc(len_x+len_y+2,sizeof(char));
@@ -96,15 +144,62 @@ char *mul(char *x, char *y)
         strcpy(res+1,str1);
         carry=0;
       }
-      printf("%d x %d = %d\n",digit_y,digit_x,mul);
-      printf("carry=%d , digit=%d\n",c,digit);
+      //printf("%d x %d = %d\n",digit_y,digit_x,mul);
+      //printf("carry=%d , digit=%d\n",c,digit);
     }
     for(int k=0; k<counter; k++) {
       strncat(res,"0",1);
     }
-    printf("res=%s\n",res);
-    total=add(total,res);
+    //printf("res=%s\n",res);
+    total=add(total,res,base);
     memset(res,0,len_x+len_y+2);
+    counter++;
+  }
+  return total;
+}
+
+bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2)
+{
+  int len_x=num1->length;
+  int len_y=num2->length;
+  bigint_t *bi=malloc(sizeof(*bi));
+  uint8_t *res=calloc(len_x+len_y+2,sizeof(uint8_t));
+  bi->data=res;
+  bigint_t *total=malloc(sizeof(*total));
+  uint8_t *restotal=calloc(len_x+len_y+2,sizeof(uint8_t));
+  total->data=restotal;
+  int obase=256;
+  int carry=0;
+  int counter=0;
+  for (int i=len_y-1; i>=0; i--){
+    for (int j=len_x-1; j>=0; j--){
+      uint8_t digit_y=num2->data[i];
+      uint8_t digit_x=num1->data[j];
+      int mul=digit_x*digit_y+carry;
+      carry=0;
+      int c=0; 
+      c=mul / obase; 
+
+      carry+=c;
+      int digit=mul % obase;
+      memmove(res+1, res, len_x+1);
+      res[0]=digit;
+      bi->length++;
+      if(j==0 && c!=0){
+        memmove(res+1, res, len_x+1);
+        res[0]=c;
+        bi->length++;
+        carry=0;
+      }
+    }
+    for(int k=0; k<counter; k++) {
+      res[bi->length]=0;
+      bi->length++;
+    }
+    bigint_t *restotal=add_bigint(total,bi);
+    total=restotal;
+    memset(res,0,len_x+len_y+2);
+    bi->length=0;
     counter++;
   }
   return total;
@@ -128,7 +223,7 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
   if((hex[0] & 0x80)==0x80) {
     is_negative=true;
   }
-  int ibase=16;
+  int obase=10;
   char *ibase_str="16";
   int total;
   char *res=NULL;
@@ -140,10 +235,10 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
     char num2[10];
     sprintf(num2,"%d",part2);
     if(i==0){
-      res=add(mul(num1,ibase_str),num2);
+      res=add(mul(num1,ibase_str,obase),num2,obase);
     }else {
-      res=add(mul(res,ibase_str),num1);
-      res=add(mul(res,ibase_str),num2);
+      res=add(mul(res,ibase_str,obase),num1,obase);
+      res=add(mul(res,ibase_str,obase),num2,obase);
     }
   }
   //https://en.wikipedia.org/wiki/Two%27s_complement
@@ -152,8 +247,10 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
     inc[0]=1;
     char *val=hex_to_decimal_str(inc,len+1);
     char *result=sub(res,val);
+    ltrim(result,'0');
     return result;
   }
+  ltrim(res,'0');
   return res;
 }
 
@@ -235,4 +332,27 @@ char *sub(char *x, char *y)
     res[0]='-';
   }
   return res;
+}
+
+bigint_t *bigint_from_decimal_str(char *decimal)
+{
+  bigint_t *bi=malloc(sizeof(*bi));
+  bool is_negative=false;
+  char *ibase_str="10";
+  int total;
+  char *res=NULL;
+  int obase=16;
+  int len=strlen(decimal);
+  for(int i=0; i<len; i++){
+    char num1[2];
+    num1[0]=decimal[i];
+    num1[1]='\0';
+    char num2[2];
+    num2[0]=decimal[i+1];
+    num2[1]='\0';
+    char *mulres=mul(num1,ibase_str,obase);
+    res=add(mulres,num2,obase);
+  }
+  ltrim(res,'0');
+  return bi;
 }
