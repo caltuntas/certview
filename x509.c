@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "x509.h"
+#include "bigint.h"
 
 
 void add_field(field_t *parent, field_t *child)
@@ -703,7 +704,7 @@ void decode(field_value_t *value)
 {
   if(value->count<=0){
     if(value->field->value_type==INTEGER) {
-      value->value.integer=convert_to_uint32(value->tlv->tlv.value,value->tlv->tlv.len);      
+      value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
     }
   }
 

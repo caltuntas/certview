@@ -1501,7 +1501,9 @@ static void test_decode_integer()
   TEST_ASSERT_TRUE(is_valid);
   decode(out);
   print_debug(is_valid,buf,len,root,&parent,out);
-  TEST_ASSERT_EQUAL(1,out->children[0]->value.integer);
+  bigint_t *bi=out->children[0]->value.bigint;
+  char *result =bigint_to_decimal_str(bi);
+  TEST_ASSERT_EQUAL_STRING("1",result);
 }
 
 int main(void)

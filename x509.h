@@ -2,6 +2,7 @@
 #define X509_H
 #include <stdbool.h>
 #include "der.h"
+#include "bigint.h"
 
 #define REFERENCE_TYPE 777
 
@@ -33,7 +34,7 @@ typedef struct field_value_t {
   size_t count;
   struct field_value_t **children;
   union {
-    int integer; 
+    bigint_t *bigint; 
   } value;
 } field_value_t;
 

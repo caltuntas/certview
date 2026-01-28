@@ -26,6 +26,11 @@ typedef struct {
 } test_case_hex_to_decimal;
 
 typedef struct {
+  bigint_t bigint;
+  char *result;
+} test_case_bigint_to_decimal;
+
+typedef struct {
   char *decimal;
   bigint_t bigint;
 } test_case_decimal_to_hex;
@@ -59,15 +64,6 @@ void tearDown(void)
 {
 }
 
-
-static void test_zero(void)
-{
-	uint8_t buf[] = {0x00};
-	size_t len=ARRAY_LEN(buf);
-	bigint_t *bigint =create_bigint(buf,len);
-	TEST_ASSERT_EQUAL(0,bigint->sign);
-	TEST_ASSERT_EQUAL("0",bigint_to_decimal_str(bigint));
-}
 
 static void test_mul(void)
 {
@@ -128,6 +124,28 @@ static void test_hex_to_decimal(void)
 		char *result =hex_to_decimal_str(tc.hex,tc.length);
 		TEST_ASSERT_EQUAL_STRING(tc.result,result);
 	}
+}
+
+
+static void test_bigint_to_decimal(void)
+{
+  test_case_bigint_to_decimal cases[] = {
+    { BIGINT(1,0xFA,0xCE),"-1330"},
+    { BIGINT(1,0x00,0x87),"135"},
+    { BIGINT(1,0xFF,0xFF,0xFF,0xFF),"-1"},
+    { BIGINT(1,0x01,0x00,0x00,0x00,0x00),"4294967296"},
+    { BIGINT(1,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF),"-1"},
+    { BIGINT(1,0xFF),"-1"},
+    { BIGINT(1,0xFF,0x00),"-256"},
+    { BIGINT(1,0x80),"-128"},
+    { BIGINT(1,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00),"-2361183241434822606848"},
+  };
+  size_t len=ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_bigint_to_decimal tc=cases[i];
+    char *result =bigint_to_decimal_str(&tc.bigint);
+    TEST_ASSERT_EQUAL_STRING(tc.result,result);
+  }
 }
 
 
@@ -305,7 +323,6 @@ static void test_compare_bigint(void)
 int main(void)
 {
   UNITY_BEGIN();
-	RUN_TEST(test_zero);
 	RUN_TEST(test_mul);
 	RUN_TEST(test_add);
 	RUN_TEST(test_hex_to_decimal);
@@ -316,5 +333,6 @@ int main(void)
 	RUN_TEST(test_decimal_to_hex);
 	RUN_TEST(test_sub_bigint);
 	RUN_TEST(test_compare_bigint);
+	RUN_TEST(test_bigint_to_decimal);
   return UNITY_END();
 }

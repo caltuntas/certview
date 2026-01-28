@@ -15,11 +15,6 @@ bigint_t *create_bigint(uint8_t *buf,size_t len)
   return bigint;
 }
 
-char *bigint_to_decimal_str(bigint_t *bigint)
-{
-  return "0";
-}
-
 char *add(char *x, char *y,int base)
 {
   int obase=base;
@@ -260,6 +255,45 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
     uint8_t *inc=calloc(len+1,sizeof(uint8_t));
     inc[0]=1;
     char *val=hex_to_decimal_str(inc,len+1);
+    char *result=sub(res,val);
+    ltrim(result,'0');
+    return result;
+  }
+  ltrim(res,'0');
+  return res;
+}
+
+//https://en.wikipedia.org/wiki/Horner%27s_method
+char *bigint_to_decimal_str(bigint_t *num)
+{
+  bool is_negative=false;
+  //check if it is negative
+  if((num->data[0] & 0x80)==0x80) {
+    is_negative=true;
+  }
+  int obase=10;
+  char *ibase_str="16";
+  int total;
+  char *res=NULL;
+  for(int i=0; i<num->length; i++){
+    int part1=(num->data[i] >> 4) & 0x0F;
+    int part2=(num->data[i]) & 0x0F;
+    char num1[10];
+    sprintf(num1,"%d",part1);
+    char num2[10];
+    sprintf(num2,"%d",part2);
+    if(i==0){
+      res=add(mul(num1,ibase_str,obase),num2,obase);
+    }else {
+      res=add(mul(res,ibase_str,obase),num1,obase);
+      res=add(mul(res,ibase_str,obase),num2,obase);
+    }
+  }
+  //https://en.wikipedia.org/wiki/Two%27s_complement
+  if(is_negative) {
+    uint8_t *inc=calloc(num->length+1,sizeof(uint8_t));
+    inc[0]=1;
+    char *val=hex_to_decimal_str(inc,num->length+1);
     char *result=sub(res,val);
     ltrim(result,'0');
     return result;
