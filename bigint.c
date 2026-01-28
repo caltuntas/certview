@@ -9,6 +9,9 @@ bigint_t *create_bigint(uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));
   bigint->sign=(buf[0] & 0x80)==0x80;
+  bigint->data=malloc(sizeof(uint8_t)*len);
+  memcpy(bigint->data,buf,len);
+  bigint->length=len;
   return bigint;
 }
 
@@ -215,6 +218,17 @@ void ltrim(char *str,char chr)
   memmove(str, ptr, len + 1);
 }
 
+void bigint_ltrim(bigint_t *bi,uint8_t val)
+{
+  uint8_t *ptr =bi->data;
+  size_t len=bi->length;
+  while(len>0 && ptr!=NULL && *ptr==val) {
+    ++ptr, --len;
+  }
+  bi->length=len;
+  memmove(bi->data, ptr, len + 1);
+}
+
 //https://en.wikipedia.org/wiki/Horner%27s_method
 char *hex_to_decimal_str(uint8_t *hex,size_t len)
 {
@@ -262,8 +276,21 @@ int compare(char *x, char *y)
     return -1;
   else if(lenx>leny)
     return 1;
-
   int cmp=strcmp(x,y);
+  if(cmp>0) return 1;
+  else if(cmp<0) return -1;
+  else return 0;
+}
+
+int compare_bigint(bigint_t *num1, bigint_t *num2)
+{
+  size_t lenx=num1->length;
+  size_t leny=num2->length;
+  if(lenx<leny)
+    return -1;
+  else if(lenx>leny)
+    return 1;
+  int cmp=memcmp(num1->data,num2->data,lenx);
   if(cmp>0) return 1;
   else if(cmp<0) return -1;
   else return 0;
@@ -334,25 +361,102 @@ char *sub(char *x, char *y)
   return res;
 }
 
+bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
+{
+  bigint_t *n1;
+  bigint_t *n2;
+  int cmp=compare_bigint(num1,num2);
+  bool is_negative=false;
+  if (cmp<0) {
+    is_negative=true;
+    n1=num2;
+    n2=num1;
+  } else if (cmp > 0) {
+    is_negative=false;
+    n1=num1;
+    n2=num2;
+  }
+
+  int obase=256;
+  int len1=n1->length;
+  int len2=n2->length;
+  bigint_t *bigint =malloc(sizeof(*bigint));
+  uint8_t *res=calloc(len1+len2+2,sizeof(char));
+  bigint->data=res;
+  int borrow=0;
+  int len=len1>len2?len1:len2;
+  int diff=abs(len1-len2);
+  for (int i=len-1; i>=0; i--){
+    int digit_y=0;
+    int digit_x=0;
+    int d=i-diff;
+    if(len1>len2) {
+      digit_x=n1->data[i];
+      if(d>=0)
+        digit_y=n2->data[i-diff];
+    } else if (len1<len2) {
+      if(d>=0)
+        digit_x=n1->data[i-diff];
+      digit_y=n2->data[i];
+    } else {
+      digit_x=n1->data[i];
+      digit_y=n2->data[i];
+    }
+
+    digit_x=digit_x-borrow;
+    if(digit_x<digit_y)
+      borrow=1;
+    else 
+      borrow=0;
+    int sub=(borrow*obase+digit_x)-digit_y;
+    int digit=sub % obase;
+    if(digit==0 && i==0){
+      break;
+    }
+    memmove(res+1, res, len+1);
+    res[0]=digit;
+    bigint->length++;
+    //char *str=strdup(res);
+    //char chr=digit+'0';
+    //strncpy(res,&chr,1);
+    //strcpy(res+1,str);
+  }
+  bigint_ltrim(bigint,0);
+  //if(is_negative) {
+  //  len=strlen(res);
+  //  memmove(res+1, res, len+1);
+  //  res[0]='-';
+  //}
+  return bigint;
+}
+
 bigint_t *bigint_from_decimal_str(char *decimal)
 {
   bigint_t *bi=malloc(sizeof(*bi));
   bool is_negative=false;
-  char *ibase_str="10";
-  int total;
-  char *res=NULL;
-  int obase=16;
+  bigint_t *res=NULL;
+  int obase=256;
   int len=strlen(decimal);
-  for(int i=0; i<len; i++){
-    char num1[2];
-    num1[0]=decimal[i];
-    num1[1]='\0';
-    char num2[2];
-    num2[0]=decimal[i+1];
-    num2[1]='\0';
-    char *mulres=mul(num1,ibase_str,obase);
-    res=add(mulres,num2,obase);
+  uint8_t ten[]={10};
+  bigint_t *ibase=create_bigint(ten,1);
+  if(len==1) {
+    uint8_t d1=decimal[0]-'0';
+    res=create_bigint(&d1,1);
+  } else {
+    for(int i=0; i<len-1; i++){
+      uint8_t d1=decimal[i]-'0';
+      bigint_t *num1=create_bigint(&d1,1);
+      uint8_t d2=decimal[i+1]-'0';
+      bigint_t *num2=create_bigint(&d2,1);
+      bigint_t *mulres=NULL;
+      if (i==0) {
+        mulres=mul_bigint(num1,ibase);
+        res=add_bigint(mulres,num2);
+      }else {
+        mulres=mul_bigint(res,ibase);
+        res=add_bigint(mulres,num2);
+      }
+    }
   }
-  ltrim(res,'0');
-  return bi;
+  return res;
 }
