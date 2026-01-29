@@ -4,7 +4,7 @@
 #include <string.h>
 #include "bigint.h"
 #define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))
-#define BIGINT(result,...) {result,(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__})}
+#define BIGINT(result,...) (bigint_t){result,(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__})}
 
 typedef struct {
   char *x;

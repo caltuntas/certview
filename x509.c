@@ -3,6 +3,7 @@
 #include <string.h>
 #include "x509.h"
 #include "bigint.h"
+#include "oid.h"
 
 
 void add_field(field_t *parent, field_t *child)
@@ -705,6 +706,9 @@ void decode(field_value_t *value)
   if(value->count<=0){
     if(value->field->value_type==INTEGER) {
       value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+    }
+    if(value->field->value_type==OBJECT_IDENTIFIER) {
+      value->value.oid=NULL;
     }
   }
 

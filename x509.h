@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "der.h"
 #include "bigint.h"
+#include "oid.h"
 
 #define REFERENCE_TYPE 777
 
@@ -35,6 +36,7 @@ typedef struct field_value_t {
   struct field_value_t **children;
   union {
     bigint_t *bigint; 
+    oid_t *oid; 
   } value;
 } field_value_t;
 

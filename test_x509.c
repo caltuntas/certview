@@ -1477,34 +1477,6 @@ static void test_explicit_any_consumption()
     id         INTEGER,
   }
 */
-static void test_decode_integer()
-{
-  field_t parent = {0};
-  parent.name = "TestSeq";
-  parent.value_type = SEQUENCE;
-  parent.pc = CONSTRUCTED;
-  parent.required = true;
-
-  field_t id = {0};
-  id.name = "id";
-  id.value_type = INTEGER;
-  id.required = true;
-
-  add_field(&parent,&id);
-
-  uint8_t buf[] = {0x30,0x03,0x02,0x01,0x01};
-  int len = ARRAY_LEN(buf);
-  tlv_t actual = parse_tlv(buf,len);
-  tlv_node_t *root = build_tlv(actual);
-  field_value_t *out=NULL;
-  bool is_valid = validate_schema(&parent, root,&out);
-  TEST_ASSERT_TRUE(is_valid);
-  decode(out);
-  print_debug(is_valid,buf,len,root,&parent,out);
-  bigint_t *bi=out->children[0]->value.bigint;
-  char *result =bigint_to_decimal_str(bi);
-  TEST_ASSERT_EQUAL_STRING("1",result);
-}
 
 int main(void)
 {
@@ -1531,6 +1503,5 @@ int main(void)
   RUN_TEST(test_bind_implicit_sequence);
   RUN_TEST(test_bind_validity_choice_utctime);
   RUN_TEST(test_explicit_any_consumption);
-  RUN_TEST(test_decode_integer);
   return UNITY_END();
 }

@@ -12,6 +12,12 @@ test:
 	gcc -g test-framework/unity.c bigint.c test_bigint.c -o test_bigint.out
 	./test_bigint.out
 
+	gcc -g test-framework/unity.c der.c x509.c bigint.c oid.c test_decode.c -o test_decode.out
+	./test_decode.out
+
+	gcc -g test-framework/unity.c oid.c test_oid.c -o test_oid.out
+	./test_oid.out
+
 clean:
 	rm -rf *.out *.o *.dSYM
 
