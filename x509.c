@@ -5,6 +5,16 @@
 #include "bigint.h"
 #include "oid.h"
 
+bit_string_t *bit_string_create(uint8_t *buf,size_t len)
+{
+  bit_string_t *bitstr=malloc(sizeof(*bitstr));
+  bitstr->data=calloc(len,sizeof(uint8_t));
+  memcpy(bitstr->data,buf,len);
+  bitstr->length=len;
+  bitstr->unused_bits=buf[0];
+  bitstr->bit_length=8*sizeof(uint8_t)*(len-1)-bitstr->unused_bits;
+  return bitstr;
+}
 
 void add_field(field_t *parent, field_t *child)
 {
@@ -696,10 +706,36 @@ void decode(field_value_t *value)
     if(value->field->value_type==OBJECT_IDENTIFIER) {
       value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
     }
+    if(value->field->value_type==BIT_STRING) {
+      value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+    }
   }
 
   for(int i=0; i<value->count; i++){
     field_value_t *child_val=value->children[i];
     decode(child_val);
   }
+}
+
+char *byte_to_binary_str(uint8_t byte,size_t unused_bits)
+{
+  char *bits=malloc(8*sizeof(char));
+  return bits;
+}
+
+char *bit_string_to_str(bit_string_t *bitstring)
+{
+  char *bits=calloc(bitstring->bit_length+1,sizeof(char));
+  for(int i=1; i<bitstring->length; i++){
+    uint8_t byte=bitstring->data[i];
+    int bit_count=8;
+    if(i==bitstring->length-1)
+      bit_count=bit_count-bitstring->unused_bits;
+    int shift_counter=7;
+    for (int j=0;j<bit_count; j++) {
+      int index=j+((i-1)*8);
+      bits[index]='0'+((byte >> (shift_counter-j)) & 1);
+    }
+  }
+  return bits;
 }

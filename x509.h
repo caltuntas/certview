@@ -13,6 +13,13 @@ typedef enum encoding_type_t {
 	IMPLICIT
 } encoding_type_t;
 
+typedef struct {
+  uint8_t unused_bits;
+  uint8_t *data;
+  size_t length;
+  size_t bit_length;
+} bit_string_t;
+
 typedef struct field_t {
 	char *name;
 	char *reference_type;
@@ -37,6 +44,7 @@ typedef struct field_value_t {
   union {
     bigint_t *bigint; 
     oid_t *oid; 
+    bit_string_t *bitstring; 
   } value;
 } field_value_t;
 
@@ -47,5 +55,7 @@ bool validate_schema(field_t *parent,tlv_node_t *tlv,field_value_t **out);
 field_t* create_x509_definition();
 void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value);
 void decode(field_value_t *value);
+bit_string_t *bit_string_create(uint8_t *buf,size_t len);
+char *bit_string_to_str(bit_string_t *bitstring);
 
 #endif

@@ -81,10 +81,44 @@ static void test_decode_oid()
   TEST_ASSERT_EQUAL_STRING("1.2.328.122189.1.1.1",result);
 }
 
+static void test_decode_bit_string()
+{
+  field_t parent = {0};
+  parent.name = "TestSeq";
+  parent.value_type = SEQUENCE;
+  parent.pc = CONSTRUCTED;
+  parent.required = true;
+
+  field_t id = {0};
+  id.name = "bitstring";
+  id.value_type = BIT_STRING;
+  id.pc = PRIMITIVE;
+  id.required = true;
+
+  add_field(&parent,&id);
+
+  uint8_t buf[] = {0x30,0x05,0x03,0x03,0x03,0x6F,0xE0};
+  int len = ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf,len);
+  tlv_node_t *root = build_tlv(actual);
+  field_value_t *out=NULL;
+  bool is_valid = validate_schema(&parent, root,&out);
+  print_debug(is_valid,buf,len,root,&parent,out);
+  TEST_ASSERT_TRUE(is_valid);
+  decode(out);
+  bit_string_t *bitstr=out->children[0]->value.bitstring;
+  TEST_ASSERT_EQUAL_INT(3,bitstr->unused_bits);
+  TEST_ASSERT_EQUAL_INT(3,bitstr->length);
+  TEST_ASSERT_EQUAL_INT(13,bitstr->bit_length);
+  char *bits=bit_string_to_str(bitstr);
+  TEST_ASSERT_EQUAL_STRING("0110111111100",bits);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
   RUN_TEST(test_decode_integer);
   RUN_TEST(test_decode_oid);
+  RUN_TEST(test_decode_bit_string);
   return UNITY_END();
 }
