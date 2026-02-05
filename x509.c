@@ -708,7 +708,7 @@ void decode(field_value_t *value)
       value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
-      value->value.oid=NULL;
+      value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
     }
   }
 

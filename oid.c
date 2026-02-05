@@ -12,33 +12,33 @@
 //TODO:edge cases
 oid_t *oid_create(uint8_t *buf,size_t len)
 {
-	oid_t *oid =malloc(sizeof(*oid));
-	oid->buffer=calloc(len,sizeof(uint8_t));
-	memcpy(oid->buffer,buf,len);
-	oid->length=len;
-	oid->arcs=calloc(100,sizeof(uint64_t));
-	uint8_t byte=buf[0];
-	uint64_t arc1=byte / 40;
-	uint64_t arc2=byte % 40;
-	oid->arcs[oid->arc_count++]=arc1;
-	oid->arcs[oid->arc_count++]=arc2;
+  oid_t *oid =malloc(sizeof(*oid));
+  oid->buffer=calloc(len,sizeof(uint8_t));
+  memcpy(oid->buffer,buf,len);
+  oid->length=len;
+  oid->arcs=calloc(100,sizeof(uint64_t));
+  uint8_t byte=buf[0];
+  uint64_t arc1=byte / 40;
+  uint64_t arc2=byte % 40;
+  oid->arcs[oid->arc_count++]=arc1;
+  oid->arcs[oid->arc_count++]=arc2;
 
-	int i=1;
-	while(i<len) {
-		uint64_t total=0;
-		short continues=1;
-		do {
-			uint8_t nb=buf[i];
-			continues=nb & 0x80;
-			uint8_t val=nb & 0x7F;
-			total=total+val;
-			if(continues)
-				total=total*128;
-			i++;
-		} while(continues) ;
-		oid->arcs[oid->arc_count++]=total;
-	}
-	return oid;
+  int i=1;
+  while(i<len) {
+    uint64_t total=0;
+    short continues=1;
+    do {
+      uint8_t nb=buf[i];
+      continues=nb & 0x80;
+      uint8_t val=nb & 0x7F;
+      total=total+val;
+      if(continues)
+        total=total*128;
+      i++;
+    } while(continues) ;
+    oid->arcs[oid->arc_count++]=total;
+  }
+  return oid;
 }
 
 char *oid_to_str(oid_t *oid)
@@ -55,7 +55,7 @@ char *oid_to_str(oid_t *oid)
     if(i<oid->arc_count-1)
       strcat(res,dot);
   }
-	return res;
+  return res;
 }
 
 oid_registry_t *oid_registry_create_entry(uint64_t arc,char *code, char *name)
@@ -75,6 +75,46 @@ void add_oid_registry_entry(oid_registry_t *parent, oid_registry_t *child)
   parent->count+=1;
 }
 
+oid_registry_t *oid_registry_find_child(oid_registry_t *parent,uint64_t arc) 
+{
+  for (int i=0; i<parent->count; i++) {
+    oid_registry_t *sub_reg=parent->children[i];
+    if(sub_reg->arc==arc){
+      return sub_reg;
+    }
+  }
+  return NULL;
+}
+
+void add_oid_registry_entry_from_str(oid_registry_t *root,char *oid,char *code)
+{
+  char *oid_copy = strdup(oid);
+  char *arc_str=strtok(oid_copy,".");
+  char *next_arc=NULL;
+  oid_registry_t *reg=root;
+  while (arc_str!=NULL) {
+    next_arc=strtok(NULL,".");
+    uint64_t arc=strtoul(arc_str,NULL,10);
+    oid_registry_t *child=oid_registry_find_child(reg,arc);
+    if(child!=NULL){
+      reg=child;
+    }else {
+      //last item
+      if(next_arc==NULL){
+        oid_registry_t *subchild=oid_registry_create_entry(arc,code,code);
+        add_oid_registry_entry(reg,subchild);
+        reg=subchild;
+      }else {
+        oid_registry_t *subchild=oid_registry_create_entry(arc,NULL,NULL);
+        add_oid_registry_entry(reg,subchild);
+        reg=subchild;
+      }
+    }
+    arc_str=next_arc;
+  }
+  free(oid_copy);
+}
+
 oid_registry_t *oid_registry_create()
 {
   oid_registry_t *root=calloc(1,sizeof(*root));
@@ -92,6 +132,8 @@ oid_registry_t *oid_registry_create()
   add_oid_registry_entry(child4,child5);
   add_oid_registry_entry(child5,child6);
   add_oid_registry_entry(child6,child7);
+  add_oid_registry_entry_from_str(root,"1.3.14.3.2.24","md2WithRSASignature");
+  //1.3.14.3.2.24md2WithRSASignature
   return root;
 }
 
@@ -108,20 +150,17 @@ char *oid_to_reg_str(oid_t *oid)
     char arc_str[50]={0};
     sprintf(arc_str,"%llu",arc);
     strcat(res,arc_str);
-    for(int j=0; reg!=NULL && j<reg->count; j++){
-      oid_registry_t *sub_reg=reg->children[j];
-      if(sub_reg->arc==arc){
-        reg=sub_reg;
+    if(reg!=NULL) {
+      oid_registry_t *oidarc=oid_registry_find_child(reg,arc);
+      if(oidarc!=NULL && oidarc->code!=NULL) {
         char code_str[50]={0};
-        sprintf(code_str,"(%s)",sub_reg->code);
+        sprintf(code_str,"(%s)",oidarc->code);
         strcat(res,code_str);
-        break;
-      }else {
-        reg=NULL;
       }
+      reg=oidarc;
     }
     if(i<oid->arc_count-1)
       strcat(res,dot);
   }
-	return res;
+  return res;
 }
