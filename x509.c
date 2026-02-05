@@ -687,20 +687,6 @@ void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,fiel
   printf("#######################\n");
 }
 
-uint32_t convert_to_uint32(uint8_t *arr,size_t len) {
-  uint32_t res = 0;
-  for(int i=0; i<len; i++){
-    res |=arr[i] << (8*i);
-  }
-  /*
-  res |= arr[0] << 24;
-  res |= arr[1] << 16;
-  res |= arr[2] << 8;
-  res |= arr[3] << 0;
-  */
-  return res;
-}
-
 void decode(field_value_t *value)
 {
   if(value->count<=0){
