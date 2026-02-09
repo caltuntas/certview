@@ -16,6 +16,15 @@ bit_string_t *bit_string_create(uint8_t *buf,size_t len)
   return bitstr;
 }
 
+octet_string_t *octet_string_create(uint8_t *buf,size_t len)
+{
+  octet_string_t *os=malloc(sizeof(*os));
+  os->data=calloc(len,sizeof(uint8_t));
+  memcpy(os->data,buf,len);
+  os->length=len;
+  return os;
+}
+
 void add_field(field_t *parent, field_t *child)
 {
   size_t cnt=parent->count;
@@ -30,6 +39,7 @@ void add_field_value(field_value_t *parent, field_value_t *child)
   parent->children=realloc(parent->children,sizeof(field_t*)*(parent->count+1));
   parent->children[cnt]=child;
   parent->count+=1;
+  child->parent=parent;
 }
 
 field_value_t* create_field_value(field_t *f, tlv_node_t *t)
@@ -41,6 +51,16 @@ field_value_t* create_field_value(field_t *f, tlv_node_t *t)
     child->field=f;
   child->tlv=t;
   return child;
+}
+
+field_t *field_find_child_by_name(field_t *parent,char *child_name)
+{
+  for(int i=0; i<parent->count; i++){
+    field_t *child=parent->children[i];
+    if(strcmp(child->name,child_name)==0)
+      return child;
+  }
+  return NULL;
 }
 
 field_t* create_field()
@@ -158,8 +178,12 @@ void print_field_value(field_value_t *value,int indent)
         char *str=bit_string_to_str(value->value.bitstring);
         printf(" - %s",str);
       }
-      if(value->field->value_type==INTEGER){
+      if(value->field->value_type==INTEGER && value->value.bigint!=NULL){
         char *str=bigint_to_decimal_str(value->value.bigint);
+        printf(" - %s",str);
+      }
+      if(value->field->value_type==OCTET_STRING){
+        char *str=octet_string_to_str(value->value.octetstring);
         printf(" - %s",str);
       }
     }
@@ -711,11 +735,15 @@ void print_debug(bool valid, uint8_t *data,size_t data_len,tlv_node_t *node,fiel
   printf("#######################\n");
 }
 
-void decode(field_value_t *value)
+//TODO:handle null tlv values
+void decode(field_value_t *value,decoder_t *decoder)
 {
   if(value->count<=0){
     if(value->field->value_type==INTEGER) {
-      value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+      if(value->tlv!=NULL)
+        value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+      else
+        value->value.bigint=NULL;      
       value->decoded=true;
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
@@ -726,11 +754,19 @@ void decode(field_value_t *value)
       value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
       value->decoded=true;
     }
+    if(value->field->value_type==OCTET_STRING) {
+      if(decoder!=NULL) {
+        decoder->decoder_func(value);
+      } else {
+        value->value.octetstring=octet_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+        value->decoded=true;
+      }
+    }
   }
 
   for(int i=0; i<value->count; i++){
     field_value_t *child_val=value->children[i];
-    decode(child_val);
+    decode(child_val,decoder);
   }
 }
 
@@ -755,4 +791,60 @@ char *bit_string_to_str(bit_string_t *bitstring)
     }
   }
   return bits;
+}
+
+char *octet_string_to_str(octet_string_t *octetstring)
+{
+  char *str=calloc(octetstring->length+1,sizeof(char));
+  sprintf(str,"%s",octetstring->data);
+  return str;
+}
+
+/*
+-- OID: 2.5.29.19
+BasicConstraints ::= SEQUENCE {
+     cA                      BOOLEAN DEFAULT FALSE,
+     pathLenConstraint       INTEGER (0..MAX) OPTIONAL
+}
+ */
+void decode_basic_constraints(field_value_t *fv)
+{
+  field_t *field_basic_constraints =create_field();
+  field_basic_constraints->name = "BasicConstraints";
+  field_basic_constraints->value_type = SEQUENCE;
+  field_basic_constraints->pc = CONSTRUCTED;
+  field_basic_constraints->required = true;
+
+  field_t *field_ca =create_field();
+  field_ca->name = "cA";
+  field_ca->value_type = BOOLEAN;
+  field_ca->has_default = true;
+
+  field_t *field_path_len =create_field();
+  field_path_len->name = "pathLenConstraint";
+  field_path_len->value_type = INTEGER;
+  field_path_len->required = false;
+
+  add_field(field_basic_constraints, field_ca);
+  add_field(field_basic_constraints, field_path_len);
+
+  field_value_t *extnID=NULL;
+  field_value_t *parent=fv->parent;
+  for(int i=0; i<parent->count; i++){
+    field_value_t *child_val=parent->children[i];
+    field_t *child_field=child_val->field;
+    if(strcmp(child_field->name,"extnID")==0){
+      oid_t *oid=child_val->value.oid;
+      char *oid_str =oid_to_str(oid);
+      if(strcmp(oid_str,"2.5.29.19")==0) {
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_basic_constraints,root,&out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+    }
+  }
 }
