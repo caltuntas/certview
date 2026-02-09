@@ -34,6 +34,7 @@ int main(int argc, char **argv)
 
   field_value_t *mapping=NULL;
   bool is_valid=validate_schema(parent,root,&mapping);
+	decode(mapping);
   print_debug(is_valid,buffer,len,root,parent,mapping);
 
   return EXIT_SUCCESS;

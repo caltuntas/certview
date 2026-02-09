@@ -41,6 +41,7 @@ typedef struct field_value_t {
   tlv_node_t *tlv;
   size_t count;
   struct field_value_t **children;
+  bool decoded;
   union {
     bigint_t *bigint; 
     oid_t *oid; 

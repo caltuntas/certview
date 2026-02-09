@@ -1,6 +1,6 @@
 CFLAGS = -g
 all:
-	gcc $(CFLAGS) main.c der.c x509.c -o certview
+	gcc $(CFLAGS) main.c der.c x509.c oid.c bigint.c -o certview
 
 test:
 	gcc -g test-framework/unity.c der.c test_der.c -o test_der.out

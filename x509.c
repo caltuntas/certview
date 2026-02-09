@@ -121,34 +121,48 @@ void print_field_value(field_value_t *value,int indent)
   printf("%*s %s ::= %s ",indent,"",value->field->name,str);
 
   if(value->field->value_type!=CHOICE){
-  printf("[");
+    printf("[");
 
-  if(value->field->value_type==ANY && value->tlv){
-    const char *type_str=type_t_toString(value->tlv->tlv.tag.type);
-    const char *class_str=class_t_toString(value->tlv->tlv.tag.class);
-    const char *tag_number_str=tag_number_t_toString(value->tlv->tlv.tag.number);
-    printf("%s ",tag_number_str);
-  }
+    if(value->field->value_type==ANY && value->tlv){
+      const char *type_str=type_t_toString(value->tlv->tlv.tag.type);
+      const char *class_str=class_t_toString(value->tlv->tlv.tag.class);
+      const char *tag_number_str=tag_number_t_toString(value->tlv->tlv.tag.number);
+      printf("%s ",tag_number_str);
+    }
 
-  if(value->tlv==NULL) {
-    printf("omitted");
-  }else if (value->tlv->count <= 0 && value->field->value_type!=CHOICE) {
-    for(int i=0; i<value->tlv->tlv.len; i++) {
-      printf("%02X,",*(value->tlv->tlv.value+i));
+    if(value->tlv==NULL) {
+      printf("omitted");
+    }else if (value->tlv->count <= 0 && value->field->value_type!=CHOICE) {
+      for(int i=0; i<value->tlv->tlv.len; i++) {
+        printf("%02X,",*(value->tlv->tlv.value+i));
+      }
+    } else if(value->field->value_type!=CHOICE && value->field->pc!=CONSTRUCTED && value->tlv && value->tlv->count>0){
+      tlv_node_t *node=value->tlv->children[0];
+      for(int i=0; i<node->tlv.len; i++) {
+        printf("%02X,",*(node->tlv.value+i));
+      }
+      //print_node_values(value->tlv,0);
     }
-  } else if(value->field->value_type!=CHOICE && value->field->pc!=CONSTRUCTED && value->tlv && value->tlv->count>0){
-    tlv_node_t *node=value->tlv->children[0];
-    for(int i=0; i<node->tlv.len; i++) {
-      printf("%02X,",*(node->tlv.value+i));
+    else {
+      for(int i=value->tlv->tlv.len_meta+2; i>0; i--) {
+        printf("%02X,",*(value->tlv->tlv.value-i));
+      }
     }
-    //print_node_values(value->tlv,0);
-  }
-  else {
-    for(int i=value->tlv->tlv.len_meta+2; i>0; i--) {
-      printf("%02X,",*(value->tlv->tlv.value-i));
+    printf("]");
+    if(value->decoded) {
+      if(value->field->value_type==OBJECT_IDENTIFIER){
+        char *str=oid_to_str(value->value.oid);
+        printf(" - %s",str);
+      }
+      if(value->field->value_type==BIT_STRING){
+        char *str=bit_string_to_str(value->value.bitstring);
+        printf(" - %s",str);
+      }
+      if(value->field->value_type==INTEGER){
+        char *str=bigint_to_decimal_str(value->value.bigint);
+        printf(" - %s",str);
+      }
     }
-  }
-  printf("]");
   }
 
   if(value->field->count > 0){
@@ -702,12 +716,15 @@ void decode(field_value_t *value)
   if(value->count<=0){
     if(value->field->value_type==INTEGER) {
       value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+      value->decoded=true;
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
       value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->decoded=true;
     }
     if(value->field->value_type==BIT_STRING) {
       value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->decoded=true;
     }
   }
 
