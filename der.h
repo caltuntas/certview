@@ -28,6 +28,7 @@
 
 //https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/
 //https://luca.ntop.org/Teaching/Appunti/asn1.html
+//https://zytrax.com/tech/survival/asn1.html
 #define ENUM_class(_)\
   _(UNIVERSAL,0)\
   _(APPLICATION,1)\

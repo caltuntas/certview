@@ -85,7 +85,7 @@ void print_field(field_t *field,int indent)
     sprintf(type_name,"%s",field->children[0]->name);
   else
     sprintf(type_name,"%s",tag_number_str);
-  char str[40]={0};
+  char str[100]={0};
   if(field->tag_class==CONTEXT_SPECIFIC && field->encoding_type==EXPLICIT)
     sprintf(str,"[%d] EXPLICIT %s",field->tag_number,type_name);
   else if(field->tag_class ==CONTEXT_SPECIFIC && field->encoding_type==IMPLICIT)
@@ -376,6 +376,52 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
   return true;
 }
 
+field_t *x509_name_definition()
+{
+  //Name
+  field_t *name =create_field();
+  name->name = "Name";
+  name->value_type = SEQUENCE;
+  name->pc = CONSTRUCTED;
+  name->element_type = REFERENCE_TYPE;
+  name->reference_type = "RelativeDistinguishedName";
+  name->required = true;
+
+  //RelativeDistinguishedName
+  field_t *rdn =create_field();
+  rdn->name = "RelativeDistinguishedName";
+  rdn->value_type = SET;
+  rdn->pc = CONSTRUCTED;
+  rdn->element_type = REFERENCE_TYPE;
+  rdn->reference_type = "AttributeTypeAndValue";
+  rdn->required = true;
+
+  add_field(name, rdn);
+
+  //AttributeTypeAndValue
+  field_t *atv =create_field();
+  atv->name = "AttributeTypeAndValue";
+  atv->value_type = SEQUENCE;
+  atv->pc = CONSTRUCTED;
+  atv->required = true;
+
+  field_t *atv_type =create_field();
+  atv_type->name = "type";
+  atv_type->value_type = OBJECT_IDENTIFIER;
+  atv_type->required = true;
+
+  field_t *atv_value =create_field();
+  atv_value->name = "value";
+  atv_value->value_type = ANY;
+  atv_value->required = true;
+
+  add_field(atv, atv_type);
+  add_field(atv, atv_value);
+  add_field(rdn, atv);
+
+  return name;
+}
+
 /*
 Certificate ::= SEQUENCE {
   tbsCertificate       TBSCertificate,
@@ -452,48 +498,7 @@ field_t* create_x509_definition()
   add_field(algorithm_identifier, ai_algorithm);
   add_field(algorithm_identifier, ai_parameters);
 
-
-  //AttributeTypeAndValue
-  field_t *atv =create_field();
-  atv->name = "AttributeTypeAndValue";
-  atv->value_type = SEQUENCE;
-  atv->pc = CONSTRUCTED;
-  atv->required = true;
-
-  field_t *atv_type =create_field();
-  atv_type->name = "type";
-  atv_type->value_type = OBJECT_IDENTIFIER;
-  atv_type->required = true;
-
-  field_t *atv_value =create_field();
-  atv_value->name = "value";
-  atv_value->value_type = ANY;
-  atv_value->required = true;
-
-  add_field(atv, atv_type);
-  add_field(atv, atv_value);
-
-  //RelativeDistinguishedName
-  field_t *rdn =create_field();
-  rdn->name = "RelativeDistinguishedName";
-  rdn->value_type = SET;
-  rdn->pc = CONSTRUCTED;
-  rdn->element_type = REFERENCE_TYPE;
-  rdn->reference_type = "AttributeTypeAndValue";
-  rdn->required = true;
-
-  add_field(rdn, atv);
-
-  //Name
-  field_t *name =create_field();
-  name->name = "Name";
-  name->value_type = SEQUENCE;
-  name->pc = CONSTRUCTED;
-  name->element_type = REFERENCE_TYPE;
-  name->reference_type = "RelativeDistinguishedName";
-  name->required = true;
-
-  add_field(name, rdn);
+  field_t *name =x509_name_definition();
 
   //Time
   field_t *time =create_field();
@@ -800,14 +805,16 @@ char *octet_string_to_str(octet_string_t *octetstring)
   return str;
 }
 
+
+
 /*
 -- OID: 2.5.29.19
 BasicConstraints ::= SEQUENCE {
      cA                      BOOLEAN DEFAULT FALSE,
      pathLenConstraint       INTEGER (0..MAX) OPTIONAL
 }
- */
-void decode_basic_constraints(field_value_t *fv)
+*/
+field_t *x509_extensions_basic_constraints_definition()
 {
   field_t *field_basic_constraints =create_field();
   field_basic_constraints->name = "BasicConstraints";
@@ -828,6 +835,244 @@ void decode_basic_constraints(field_value_t *fv)
   add_field(field_basic_constraints, field_ca);
   add_field(field_basic_constraints, field_path_len);
 
+  return field_basic_constraints;
+}
+
+/*
+-- OID: 2.5.29.35
+AuthorityKeyIdentifier ::= SEQUENCE {
+     keyIdentifier             [0] KeyIdentifier            OPTIONAL,
+     authorityCertIssuer       [1] GeneralNames             OPTIONAL,
+     authorityCertSerialNumber [2] CertificateSerialNumber  OPTIONAL
+}
+KeyIdentifier ::= OCTET STRING
+AnotherName ::= SEQUENCE {
+     type-id    OBJECT IDENTIFIER,
+     value      [0] EXPLICIT ANY DEFINED BY type-id
+}
+EDIPartyName ::= SEQUENCE {
+     nameAssigner            [0] DirectoryString OPTIONAL,
+     partyName               [1] DirectoryString
+}
+GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+
+GeneralName ::= CHOICE {
+     otherName                       [0]     AnotherName,
+     rfc822Name                      [1]     IA5String,
+     dNSName                         [2]     IA5String,
+     x400Address                     [3]     ORAddress,
+     directoryName                   [4]     Name,
+     ediPartyName                    [5]     EDIPartyName,
+     uniformResourceIdentifier       [6]     IA5String,
+     iPAddress                       [7]     OCTET STRING,
+     registeredID                    [8]     OBJECT IDENTIFIER
+}
+*/
+field_t *x509_extensions_key_identifier_definition()
+{
+  field_t *another_name = create_field();
+  another_name->name = "AnotherName";
+  another_name->value_type = SEQUENCE;
+  another_name->pc = CONSTRUCTED;
+  another_name->required = true;
+
+  field_t *an_type_id = create_field();
+  an_type_id->name = "type-id";
+  an_type_id->value_type = OBJECT_IDENTIFIER;
+  an_type_id->required = true;
+
+  field_t *an_value = create_field();
+  an_value->name = "value";
+  an_value->tag_class = CONTEXT_SPECIFIC;
+  an_value->tag_number = 0;
+  an_value->encoding_type = EXPLICIT;
+  an_value->value_type = ANY;
+  an_value->required = true;
+
+  add_field(another_name, an_type_id);
+  add_field(another_name, an_value);
+
+  field_t *edi_party_name = create_field();
+  edi_party_name->name = "EDIPartyName";
+  edi_party_name->value_type = SEQUENCE;
+  edi_party_name->pc = CONSTRUCTED;
+  edi_party_name->required = true;
+
+  field_t *edi_name_assigner = create_field();
+  edi_name_assigner->name = "nameAssigner";
+  edi_name_assigner->tag_class = CONTEXT_SPECIFIC;
+  edi_name_assigner->tag_number = 0;
+  edi_name_assigner->value_type = ANY;   // DirectoryString
+  edi_name_assigner->required = false;
+
+  field_t *edi_party = create_field();
+  edi_party->name = "partyName";
+  edi_party->tag_class = CONTEXT_SPECIFIC;
+  edi_party->tag_number = 1;
+  edi_party->value_type = ANY;   // DirectoryString
+  edi_party->required = true;
+
+  add_field(edi_party_name, edi_name_assigner);
+  add_field(edi_party_name, edi_party);
+
+  field_t *general_name = create_field();
+  general_name->name = "GeneralName";
+  general_name->value_type = CHOICE;
+  general_name->required = true;
+
+  field_t *gn_other = create_field();
+  gn_other->name = "otherName";
+  gn_other->tag_class = CONTEXT_SPECIFIC;
+  gn_other->tag_number = 0;
+  gn_other->encoding_type = IMPLICIT;
+  gn_other->value_type = REFERENCE_TYPE;
+  gn_other->reference_type = "AnotherName";
+  gn_other->required = true;
+
+  add_field(gn_other, another_name);
+
+  field_t *gn_rfc822 = create_field();
+  gn_rfc822->name = "rfc822Name";
+  gn_rfc822->tag_class = CONTEXT_SPECIFIC;
+  gn_rfc822->tag_number = 1;
+  gn_rfc822->encoding_type = IMPLICIT;
+  gn_rfc822->value_type = IA5String;
+  gn_rfc822->required = true;
+
+  field_t *gn_dns = create_field();
+  gn_dns->name = "dNSName";
+  gn_dns->tag_class = CONTEXT_SPECIFIC;
+  gn_dns->tag_number = 2;
+  gn_dns->encoding_type = IMPLICIT;
+  gn_dns->value_type = IA5String;
+  gn_dns->required = true;
+
+  field_t *gn_x400 = create_field();
+  gn_x400->name = "x400Address";
+  gn_x400->tag_class = CONTEXT_SPECIFIC;
+  gn_x400->tag_number = 3;
+  gn_x400->encoding_type = IMPLICIT;
+  gn_x400->value_type = ANY;   // ORAddress
+  gn_x400->required = true;
+
+  field_t *gn_dir = create_field();
+  gn_dir->name = "directoryName";
+  gn_dir->tag_class = CONTEXT_SPECIFIC;
+  gn_dir->tag_number = 4;
+  gn_dir->value_type = REFERENCE_TYPE;
+  gn_dir->encoding_type = IMPLICIT;
+  gn_dir->reference_type = "Name";
+  gn_dir->pc = CONSTRUCTED;
+  gn_dir->required = true;
+
+  field_t *name =x509_name_definition();
+
+  add_field(gn_dir,name);
+
+
+  field_t *gn_edi = create_field();
+  gn_edi->name = "ediPartyName";
+  gn_edi->tag_class = CONTEXT_SPECIFIC;
+  gn_edi->tag_number = 5;
+  gn_edi->value_type = REFERENCE_TYPE;
+  gn_edi->encoding_type = IMPLICIT;
+  gn_edi->reference_type = "EDIPartyName";
+  gn_edi->pc = CONSTRUCTED;
+  gn_edi->required = true;
+
+  add_field(gn_edi, edi_party_name);
+
+  field_t *gn_uri = create_field();
+  gn_uri->name = "uniformResourceIdentifier";
+  gn_uri->tag_class = CONTEXT_SPECIFIC;
+  gn_uri->tag_number = 6;
+  gn_uri->encoding_type = IMPLICIT;
+  gn_uri->value_type = IA5String;
+  gn_uri->required = true;
+
+  field_t *gn_ip = create_field();
+  gn_ip->name = "iPAddress";
+  gn_ip->tag_class = CONTEXT_SPECIFIC;
+  gn_ip->tag_number = 7;
+  gn_ip->encoding_type = IMPLICIT;
+  gn_ip->value_type = OCTET_STRING;
+  gn_ip->required = true;
+
+  field_t *gn_regid = create_field();
+  gn_regid->name = "registeredID";
+  gn_regid->tag_class = CONTEXT_SPECIFIC;
+  gn_regid->tag_number = 8;
+  gn_regid->encoding_type = IMPLICIT;
+  gn_regid->value_type = OBJECT_IDENTIFIER;
+  gn_regid->required = true;
+
+  add_field(general_name, gn_other);
+  add_field(general_name, gn_rfc822);
+  add_field(general_name, gn_dns);
+  add_field(general_name, gn_x400);
+  //add_field(gn_dir, name);
+  add_field(general_name, gn_dir);
+  add_field(general_name, gn_edi);
+  add_field(general_name, gn_uri);
+  add_field(general_name, gn_ip);
+  add_field(general_name, gn_regid);
+
+  field_t *general_names = create_field();
+  general_names->name = "GeneralNames";
+  general_names->value_type = SEQUENCE;
+  general_names->pc = CONSTRUCTED;
+  general_names->element_type = REFERENCE_TYPE;
+  general_names->reference_type = "GeneralName";
+  general_names->required = true;
+
+  add_field(general_names, general_name);
+
+  field_t *authority_key_identifier = create_field();
+  authority_key_identifier->name = "AuthorityKeyIdentifier";
+  authority_key_identifier->value_type = SEQUENCE;
+  authority_key_identifier->pc = CONSTRUCTED;
+  authority_key_identifier->required = true;
+
+  field_t *aki_keyid = create_field();
+  aki_keyid->name = "keyIdentifier";
+  aki_keyid->tag_class = CONTEXT_SPECIFIC;
+  aki_keyid->tag_number = 0;
+  aki_keyid->encoding_type = IMPLICIT;
+  aki_keyid->value_type = OCTET_STRING;
+  aki_keyid->required = false;
+
+  field_t *aki_issuer = create_field();
+  aki_issuer->name = "authorityCertIssuer";
+  aki_issuer->tag_class = CONTEXT_SPECIFIC;
+  aki_issuer->tag_number = 1;
+  aki_issuer->encoding_type = IMPLICIT;
+  aki_issuer->value_type = REFERENCE_TYPE;
+  aki_issuer->reference_type = "GeneralNames";
+  aki_issuer->pc = CONSTRUCTED;
+  aki_issuer->required = false;
+
+  add_field(aki_issuer, general_names);
+
+  field_t *aki_serial = create_field();
+  aki_serial->name = "authorityCertSerialNumber";
+  aki_serial->tag_class = CONTEXT_SPECIFIC;
+  aki_serial->tag_number = 2;
+  aki_serial->encoding_type = IMPLICIT;
+  aki_serial->value_type = INTEGER;
+  aki_serial->required = false;
+
+
+  add_field(authority_key_identifier, aki_keyid);
+  add_field(authority_key_identifier, aki_issuer);
+  add_field(authority_key_identifier, aki_serial);
+
+  return authority_key_identifier;
+}
+
+void decode_basic_constraints(field_value_t *fv)
+{
+  field_t *field_basic_constraints=x509_extensions_basic_constraints_definition();
+  field_t *field_key_identifier=x509_extensions_key_identifier_definition();
   field_value_t *extnID=NULL;
   field_value_t *parent=fv->parent;
   for(int i=0; i<parent->count; i++){
@@ -841,6 +1086,16 @@ void decode_basic_constraints(field_value_t *fv)
         tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_basic_constraints,root,&out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+      if(strcmp(oid_str,"2.5.29.35")==0) {
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_key_identifier,root,&out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_identifier,out);
         if(is_valid){
           add_field_value(fv,out);
         }
