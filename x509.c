@@ -298,10 +298,10 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
             tlv_node_t *item=tlv->children[i];
-            if (validate_schema(item_field,item,&parent_value)==false)
+            if (validate_schema(item_field,item,&parent_value)==false){
               return false;
-            else {
-              //create_add_field_value(parent_value,item_field,&item);
+            } else {
+              create_add_field_value(parent_value,item_field,item);
             }
           }
           //return true;
@@ -810,6 +810,32 @@ char *octet_string_to_str(octet_string_t *octetstring)
   return str;
 }
 
+/*
+id-ce-extKeyUsage OBJECT IDENTIFIER ::= { id-ce 37 }
+ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
+
+KeyPurposeId ::= OBJECT IDENTIFIER
+ */
+
+field_t *x509_extensions_extended_key_usage_definition()
+{
+  field_t *key_usage =create_field();
+  key_usage->name = "ExtKeyUsageSyntax";
+  key_usage->value_type = SEQUENCE;
+  key_usage->pc = CONSTRUCTED;
+  key_usage->element_type = REFERENCE_TYPE;
+  key_usage->reference_type = "KeyPurposeId";
+  key_usage->required = true;
+
+  field_t *purpose =create_field();
+  purpose->name = "KeyPurposeId";
+  purpose->value_type = OBJECT_IDENTIFIER;
+  purpose->pc = PRIMITIVE;
+  purpose->required = true;
+
+  add_field(key_usage, purpose);
+  return key_usage;
+}
 
 /*
 id-ce-keyUsage OBJECT IDENTIFIER ::= { id-ce 15 }
@@ -1134,6 +1160,17 @@ void decode_basic_constraints(field_value_t *fv)
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_usage,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_usage,out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+      if(strcmp(oid_str,"2.5.29.37")==0) {
+        field_t *field_ext_key_usage=x509_extensions_extended_key_usage_definition();
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_ext_key_usage,root,&out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_ext_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }
