@@ -330,7 +330,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
                 create_add_field_value(parent_value,f,tn);
               }
             }else {
-              //optional field or has default value
+              //optional field or has default value but current tlv does not match
               if(matches==false) {
                 create_add_field_value(parent_value,f,NULL);
                 continue;
@@ -351,6 +351,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
         }
       }
       //TODO:validate order of elements in later stage
+      //TODO:missing mapping
       else if(field->value_type==SET) {
         //SET OF
         if(field->element_type!=0){
@@ -373,6 +374,10 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     }
   }
 
+  if(*out==NULL){
+    field_value_t *parent_value=create_field_value(field,tlv);
+    *out=parent_value;
+  }
   return true;
 }
 
@@ -806,6 +811,28 @@ char *octet_string_to_str(octet_string_t *octetstring)
 }
 
 
+/*
+id-ce-keyUsage OBJECT IDENTIFIER ::= { id-ce 15 }
+KeyUsage ::= BIT STRING {
+    digitalSignature        (0),
+    nonRepudiation          (1),
+    keyEncipherment         (2),
+    dataEncipherment        (3),
+    keyAgreement            (4),
+    keyCertSign             (5),
+    cRLSign                 (6),
+    encipherOnly            (7),
+    decipherOnly            (8)
+}
+*/
+field_t *x509_extensions_key_usage_definition()
+{
+  field_t *key_usage =create_field();
+  key_usage->name = "KeyUsage";
+  key_usage->value_type = BIT_STRING;
+  key_usage->required = true;
+  return key_usage;
+}
 
 /*
 -- OID: 2.5.29.19
@@ -1096,6 +1123,17 @@ void decode_basic_constraints(field_value_t *fv)
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_identifier,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_identifier,out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+      if(strcmp(oid_str,"2.5.29.15")==0) {
+        field_t *field_key_usage=x509_extensions_key_usage_definition();
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_key_usage,root,&out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }

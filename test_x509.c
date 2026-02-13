@@ -1473,10 +1473,31 @@ static void test_explicit_any_consumption()
 }
 
 /*
-  TestSeq ::= SEQUENCE {
-    id         INTEGER,
-  }
+KeyUsage ::=BIT STRING
+}
 */
+static void test_bind_simple_bit_string()
+{
+  field_t parent = {0};
+  parent.name = "KeyUsage";
+  parent.value_type = BIT_STRING;
+  parent.pc=PRIMITIVE;
+  parent.required = true;
+
+  uint8_t buf[]={0x03,0x02,0x07,0x80};
+
+  size_t len=ARRAY_LEN(buf);
+  tlv_t actual = parse_tlv(buf, len);
+  tlv_node_t *tlv_root = build_tlv(actual);
+  field_value_t *binding=NULL;
+  bool is_valid = validate_schema(&parent, tlv_root,&binding);
+  print_debug(is_valid,buf,len,tlv_root,&parent,binding);
+  TEST_ASSERT_EQUAL(true, is_valid);
+
+  TEST_ASSERT_EQUAL_PTR(binding->field,&parent);
+  TEST_ASSERT_EQUAL_PTR(binding->tlv,tlv_root);
+}
+
 
 int main(void)
 {
@@ -1503,5 +1524,6 @@ int main(void)
   RUN_TEST(test_bind_implicit_sequence);
   RUN_TEST(test_bind_validity_choice_utctime);
   RUN_TEST(test_explicit_any_consumption);
+  RUN_TEST(test_bind_simple_bit_string);
   return UNITY_END();
 }
