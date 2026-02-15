@@ -811,6 +811,27 @@ char *octet_string_to_str(octet_string_t *octetstring)
 }
 
 /*
+id-ce-subjectAltName OBJECT IDENTIFIER ::= { id-ce 17 }
+
+SubjectAltName ::= GeneralNames
+
+GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+
+GeneralName ::= CHOICE {
+    otherName                       [0]  AnotherName,
+    rfc822Name                      [1]  IA5String,
+    dNSName                         [2]  IA5String,
+    x400Address                     [3]  ORAddress,
+    directoryName                   [4]  Name,
+    ediPartyName                    [5]  EDIPartyName,
+    uniformResourceIdentifier       [6]  IA5String,
+    iPAddress                       [7]  OCTET STRING,
+    registeredID                    [8]  OBJECT IDENTIFIER
+}
+*/
+
+
+/*
 id-ce-extKeyUsage OBJECT IDENTIFIER ::= { id-ce 37 }
 ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
 
@@ -892,13 +913,6 @@ field_t *x509_extensions_basic_constraints_definition()
 }
 
 /*
--- OID: 2.5.29.35
-AuthorityKeyIdentifier ::= SEQUENCE {
-     keyIdentifier             [0] KeyIdentifier            OPTIONAL,
-     authorityCertIssuer       [1] GeneralNames             OPTIONAL,
-     authorityCertSerialNumber [2] CertificateSerialNumber  OPTIONAL
-}
-KeyIdentifier ::= OCTET STRING
 AnotherName ::= SEQUENCE {
      type-id    OBJECT IDENTIFIER,
      value      [0] EXPLICIT ANY DEFINED BY type-id
@@ -921,7 +935,7 @@ GeneralName ::= CHOICE {
      registeredID                    [8]     OBJECT IDENTIFIER
 }
 */
-field_t *x509_extensions_key_identifier_definition()
+field_t *x509_general_names_definition()
 {
   field_t *another_name = create_field();
   another_name->name = "AnotherName";
@@ -1063,7 +1077,6 @@ field_t *x509_extensions_key_identifier_definition()
   add_field(general_name, gn_rfc822);
   add_field(general_name, gn_dns);
   add_field(general_name, gn_x400);
-  //add_field(gn_dir, name);
   add_field(general_name, gn_dir);
   add_field(general_name, gn_edi);
   add_field(general_name, gn_uri);
@@ -1080,6 +1093,41 @@ field_t *x509_extensions_key_identifier_definition()
 
   add_field(general_names, general_name);
 
+  return general_names;
+}
+
+/*
+id-ce-subjectAltName OBJECT IDENTIFIER ::= { id-ce 17 }
+
+SubjectAltName ::= GeneralNames
+ */
+field_t *x509_san_definition()
+{
+  field_t *san = create_field();
+  san->name = "SubjectAltName";
+  san->value_type = REFERENCE_TYPE;
+  san->pc = CONSTRUCTED;
+  san->reference_type = "GeneralNames";
+  san->required = true;
+
+  field_t *general_names=x509_general_names_definition();
+
+  add_field(san, general_names);
+
+  return san;
+}
+
+/*
+-- OID: 2.5.29.35
+AuthorityKeyIdentifier ::= SEQUENCE {
+     keyIdentifier             [0] KeyIdentifier            OPTIONAL,
+     authorityCertIssuer       [1] GeneralNames             OPTIONAL,
+     authorityCertSerialNumber [2] CertificateSerialNumber  OPTIONAL
+}
+KeyIdentifier ::= OCTET STRING
+*/
+field_t *x509_extensions_key_identifier_definition()
+{
   field_t *authority_key_identifier = create_field();
   authority_key_identifier->name = "AuthorityKeyIdentifier";
   authority_key_identifier->value_type = SEQUENCE;
@@ -1104,6 +1152,7 @@ field_t *x509_extensions_key_identifier_definition()
   aki_issuer->pc = CONSTRUCTED;
   aki_issuer->required = false;
 
+  field_t *general_names=x509_general_names_definition();
   add_field(aki_issuer, general_names);
 
   field_t *aki_serial = create_field();
@@ -1171,6 +1220,17 @@ void decode_basic_constraints(field_value_t *fv)
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_ext_key_usage,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_ext_key_usage,out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+      if(strcmp(oid_str,"2.5.29.17")==0) {
+        field_t *field_san=x509_san_definition();
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_san,root,&out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_san,out);
         if(is_valid){
           add_field_value(fv,out);
         }
