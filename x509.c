@@ -766,10 +766,17 @@ void decode(field_value_t *value,decoder_t *decoder)
 {
   if(value->count<=0){
     if(value->field->value_type==INTEGER) {
-      if(value->tlv!=NULL)
-        value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
-      else
+      if(value->tlv!=NULL){
+        //TODO:check IMPLICIT encoding
+        if(value->field->encoding_type==EXPLICIT){
+          tlv_node_t *tlv=value->tlv->children[0];
+          value->value.bigint=create_bigint(tlv->tlv.value,tlv->tlv.len);      
+        }else {
+          value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+        }
+      }else{
         value->value.bigint=NULL;      
+      }
       value->decoded=true;
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
