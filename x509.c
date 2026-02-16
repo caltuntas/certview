@@ -25,6 +25,15 @@ octet_string_t *octet_string_create(uint8_t *buf,size_t len)
   return os;
 }
 
+ia5_string_t *ia5_string_create(uint8_t *buf,size_t len)
+{
+  ia5_string_t *ia5=malloc(sizeof(*ia5));
+  ia5->data=calloc(len,sizeof(uint8_t));
+  memcpy(ia5->data,buf,len);
+  ia5->length=len;
+  return ia5;
+}
+
 void add_field(field_t *parent, field_t *child)
 {
   size_t cnt=parent->count;
@@ -69,6 +78,8 @@ field_t* create_field()
   return f;
 }
 
+//TODO:while recursively validating and mapping fields, this function is called multiple time
+//but who should call it is inconsistent, private types or constructed types , ownership check
 void create_add_field_value(field_value_t *parent, field_t *f, tlv_node_t *t)
 {
   if(f->value_type!=REFERENCE_TYPE) {
@@ -186,6 +197,10 @@ void print_field_value(field_value_t *value,int indent)
         char *str=octet_string_to_str(value->value.octetstring);
         printf(" - %s",str);
       }
+      if(value->field->value_type==IA5String){
+        char *str=ia5_string_to_str(value->value.ia5string);
+        printf(" - %s",str);
+      }
     }
   }
 
@@ -199,6 +214,17 @@ void print_field_value(field_value_t *value,int indent)
   if(value->field->count > 0){
     printf("%*s }\n",indent,"");
   }
+}
+field_value_t *set_or_add_field_value(field_t *field,tlv_node_t *tlv,field_value_t **out)
+{
+  field_value_t *parent_value=create_field_value(field,tlv);
+  if(*out==NULL){
+    *out=parent_value;
+  }else {
+    if(parent_value->field->element_type==0)
+      add_field_value(*out,parent_value);
+  }
+  return parent_value;
 }
 
 //TODO:handle primitive type mapping, example standalone integer,string etc.
@@ -219,12 +245,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
     }
     return validate_schema(f,tlv,out);
   }else if(field->value_type==CHOICE){
-    field_value_t *parent_value=create_field_value(field,tlv);
-    if(*out==NULL){
-      *out=parent_value;
-    }else {
-      add_field_value(*out,parent_value);
-    }
+    field_value_t *parent_value=set_or_add_field_value(field,tlv,out);
     for (int i=0; i<field->count; i++) {
       field_t *option_field=field->children[i];
       if (validate_schema(option_field,tlv,&parent_value)) {
@@ -282,12 +303,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
         if(field->value_type!=tlv->tlv.tag.number)
           return false;
       }
-      field_value_t *parent_value=create_field_value(field,tlv);
-      if(*out==NULL){
-        *out=parent_value;
-      }else {
-        add_field_value(*out,parent_value);
-      }
+      field_value_t *parent_value=set_or_add_field_value(field,tlv,out);
       if(field->value_type==SEQUENCE) {
         //SEQUENCE OF
         if(field->element_type!=0){
@@ -301,7 +317,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
             if (validate_schema(item_field,item,&parent_value)==false){
               return false;
             } else {
-              create_add_field_value(parent_value,item_field,item);
+              //create_add_field_value(parent_value,item_field,item);
             }
           }
           //return true;
@@ -764,6 +780,10 @@ void decode(field_value_t *value,decoder_t *decoder)
       value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
       value->decoded=true;
     }
+    if(value->field->value_type==IA5String) {
+      value->value.ia5string=ia5_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->decoded=true;
+    }
     if(value->field->value_type==OCTET_STRING) {
       if(decoder!=NULL) {
         decoder->decoder_func(value);
@@ -807,6 +827,13 @@ char *octet_string_to_str(octet_string_t *octetstring)
 {
   char *str=calloc(octetstring->length+1,sizeof(char));
   sprintf(str,"%s",octetstring->data);
+  return str;
+}
+
+char *ia5_string_to_str(ia5_string_t *ia5string)
+{
+  char *str=calloc(ia5string->length+1,sizeof(char));
+  sprintf(str,"%s",ia5string->data);
   return str;
 }
 

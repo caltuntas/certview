@@ -25,6 +25,11 @@ typedef struct {
   size_t length;
 } octet_string_t;
 
+typedef struct {
+  uint8_t *data;
+  size_t length;
+} ia5_string_t;
+
 typedef struct field_t {
 	char *name;
 	char *reference_type;
@@ -53,6 +58,7 @@ typedef struct field_value_t {
     oid_t *oid; 
     bit_string_t *bitstring; 
     octet_string_t *octetstring; 
+    ia5_string_t *ia5string; 
   } value;
 } field_value_t;
 
@@ -72,6 +78,7 @@ void decode(field_value_t *value,decoder_t *decoder);
 bit_string_t *bit_string_create(uint8_t *buf,size_t len);
 char *bit_string_to_str(bit_string_t *bitstring);
 char *octet_string_to_str(octet_string_t *octetstring);
+char *ia5_string_to_str(ia5_string_t *ia5string);
 void decode_basic_constraints(field_value_t *value);
 
 #endif

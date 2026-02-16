@@ -1498,6 +1498,217 @@ static void test_bind_simple_bit_string()
   TEST_ASSERT_EQUAL_PTR(binding->tlv,tlv_root);
 }
 
+/*
+   FinalTest ::= SEQUENCE {
+   version         [0] EXPLICIT INTEGER DEFAULT 1,
+   identifier      INTEGER,
+   payload         Payload,
+   attributes      SEQUENCE OF Attribute OPTIONAL
+   }
+   Payload ::= CHOICE {
+   simple          INTEGER,
+   complex         [1] IMPLICIT ComplexPayload
+   }
+   ComplexPayload ::= SEQUENCE {
+   flag            BOOLEAN,
+   values          SEQUENCE OF INTEGER,
+   extra           [2] EXPLICIT UTF8String OPTIONAL
+   }
+   Attribute ::= SEQUENCE {
+   type            OBJECT IDENTIFIER,
+   value           AttributeValue
+   }
+   AttributeValue ::= CHOICE {
+   intValue        INTEGER,
+   strValue        UTF8String,
+   binValue        OCTET STRING
+   }
+   */
+static void test_bind_complex()
+{
+  field_t complex_payload = {0};
+  complex_payload.name = "ComplexPayload";
+  complex_payload.value_type = SEQUENCE;
+  complex_payload.pc=CONSTRUCTED;
+  complex_payload.required = true;
+
+  field_t cp_flag = {0};
+  cp_flag.name = "flag";
+  cp_flag.value_type = BOOLEAN;
+  cp_flag.required = true;
+
+  field_t cp_values = {0};
+  cp_values.name = "values";
+  cp_values.value_type = SEQUENCE;
+  cp_values.pc=CONSTRUCTED;
+  cp_values.required = true;
+  cp_values.element_type = REFERENCE_TYPE;
+
+  field_t integer = {0};
+  integer.value_type=INTEGER;
+  integer.required=true;
+  integer.has_default=false;
+
+  add_field(&cp_values,&integer);
+
+
+  field_t cp_extra = {0};
+  cp_extra.name = "extra";
+  cp_extra.tag_class = CONTEXT_SPECIFIC;
+  cp_extra.tag_number = 2;
+  cp_extra.encoding_type = EXPLICIT;
+  cp_extra.value_type = UTF8String;
+  cp_extra.required = false;
+
+  add_field(&complex_payload, &cp_flag);
+  add_field(&complex_payload, &cp_values);
+  add_field(&complex_payload, &cp_extra);
+
+  field_t payload = {0};
+  payload.name = "Payload";
+  payload.value_type = CHOICE;
+  payload.required = true;
+
+  field_t payload_simple = {0};
+  payload_simple.name = "simple";
+  payload_simple.value_type = INTEGER;
+
+  field_t payload_complex = {0};
+  payload_complex.name = "complex";
+  payload_complex.tag_class = CONTEXT_SPECIFIC;
+  payload_complex.tag_number = 1;
+  payload_complex.encoding_type = IMPLICIT;
+  payload_complex.value_type = REFERENCE_TYPE;
+  payload_complex.reference_type = "ComplexPayload";
+
+  add_field(&payload, &payload_simple);
+  add_field(&payload, &payload_complex);
+
+  add_field(&payload_complex, &complex_payload);
+
+  field_t attribute_value = {0};
+  attribute_value.name = "AttributeValue";
+  attribute_value.value_type = CHOICE;
+  attribute_value.required = true;
+
+  field_t av_int = {0};
+  av_int.name = "intValue";
+  av_int.value_type = INTEGER;
+
+  field_t av_str = {0};
+  av_str.name = "strValue";
+  av_str.value_type = UTF8String;
+
+  field_t av_bin = {0};
+  av_bin.name = "binValue";
+  av_bin.value_type = OCTET_STRING;
+
+  add_field(&attribute_value, &av_int);
+  add_field(&attribute_value, &av_str);
+  add_field(&attribute_value, &av_bin);
+
+  field_t attribute = {0};
+  attribute.name = "Attribute";
+  attribute.value_type = SEQUENCE;
+  attribute.pc=CONSTRUCTED;
+  attribute.required = true;
+
+  field_t attr_type = {0};
+  attr_type.name = "type";
+  attr_type.value_type = OBJECT_IDENTIFIER;
+  attr_type.required = true;
+
+  field_t attr_value = {0};
+  attr_value.name = "value";
+  attr_value.value_type = REFERENCE_TYPE;
+  attr_value.reference_type = "AttributeValue";
+  attr_value.required = true;
+
+  add_field(&attribute, &attr_type);
+  add_field(&attribute, &attr_value);
+
+  add_field(&attr_value, &attribute_value);
+
+
+  field_t final_test = {0};
+  final_test.name = "FinalTest";
+  final_test.value_type = SEQUENCE;
+  final_test.pc=CONSTRUCTED;
+  final_test.required = true;
+
+  field_t ft_version = {0};
+  ft_version.name = "version";
+  ft_version.tag_class = CONTEXT_SPECIFIC;
+  ft_version.tag_number = 0;
+  ft_version.encoding_type = EXPLICIT;
+  ft_version.value_type = INTEGER;
+  ft_version.required = false;
+  ft_version.has_default = true;
+
+  field_t ft_identifier = {0};
+  ft_identifier.name = "identifier";
+  ft_identifier.value_type = INTEGER;
+  ft_identifier.required = true;
+
+  field_t ft_payload = {0};
+  ft_payload.name = "payload";
+  ft_payload.value_type = REFERENCE_TYPE;
+  ft_payload.reference_type = "Payload";
+  ft_payload.required = true;
+
+  field_t ft_attributes = {0};
+  ft_attributes.name = "attributes";
+  ft_attributes.value_type = SEQUENCE;
+  ft_attributes.pc=CONSTRUCTED;
+  ft_attributes.element_type = REFERENCE_TYPE;
+  ft_attributes.reference_type = "Attribute";
+  ft_attributes.required = false;
+
+  add_field(&final_test, &ft_version);
+  add_field(&final_test, &ft_identifier);
+  add_field(&final_test, &ft_payload);
+  add_field(&final_test, &ft_attributes);
+
+  add_field(&ft_attributes, &attribute);
+
+  add_field(&ft_payload, &payload);
+
+  uint8_t buf[] = {0x30,0x10,0x02,0x01,0x01,0xA1,0x0B,0x01,0x01,0xFF,0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
+  size_t len = ARRAY_LEN(buf);
+
+  tlv_t actual = parse_tlv(buf, len);
+  tlv_node_t *tlv_root = build_tlv(actual);
+
+  field_value_t *value = NULL;
+  bool is_valid = validate_schema(&final_test, tlv_root, &value);
+  print_debug(is_valid, buf, len, tlv_root, &final_test, value);
+
+  TEST_ASSERT_EQUAL(true, is_valid);
+
+  TEST_ASSERT_EQUAL_PTR(value->field, &final_test);
+
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->field, &ft_version);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->field, &ft_identifier);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->field, &payload);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->children[0]->field, &payload_complex);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->children[0]->children[0]->field, &cp_flag);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->children[0]->children[1]->field, &cp_values);
+  TEST_ASSERT_EQUAL_PTR(value->children[3]->field, &ft_attributes);
+	//count of children of payload_complex
+  TEST_ASSERT_EQUAL(1, value->children[2]->count);
+  TEST_ASSERT_EQUAL(3, value->children[2]->children[0]->count);
+  TEST_ASSERT_EQUAL(2, value->children[2]->children[0]->children[1]->tlv->count);
+  TEST_ASSERT_EQUAL_PTR(value->children[3]->field, &ft_attributes);
+  TEST_ASSERT_EQUAL_PTR(value->children[0]->tlv, NULL);
+  TEST_ASSERT_EQUAL_PTR(value->children[1]->tlv, tlv_root->children[0]);
+  TEST_ASSERT_EQUAL_PTR(value->children[2]->tlv, tlv_root->children[1]);
+  TEST_ASSERT_EQUAL_PTR(value->children[3]->tlv, NULL);
+
+  TEST_ASSERT_EQUAL(0, value->children[1]->count);
+  TEST_ASSERT_EQUAL(value->count,4);
+}
+
+
 
 int main(void)
 {
@@ -1525,5 +1736,6 @@ int main(void)
   RUN_TEST(test_bind_validity_choice_utctime);
   RUN_TEST(test_explicit_any_consumption);
   RUN_TEST(test_bind_simple_bit_string);
+  RUN_TEST(test_bind_complex);
   return UNITY_END();
 }
