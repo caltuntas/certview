@@ -13,6 +13,8 @@ int ecdsa_mod(int num, unsigned int divisor)
 int ecdsa_mod_inverse(int num, unsigned int divisor) 
 {
 	int res=0,counter=0;
+  if (num==0)
+    return 0;
 	while(res!=1) {
 		res=(num * ++counter) % divisor;
 	}
@@ -34,7 +36,10 @@ ecdsa_point_t ecdsa_point_times(ecdsa_params_t params, int times,ecdsa_point_t p
 {
 	ecdsa_point_t result=p;
 	for(int i=0; i<times; i++){
-		result = ecdsa_point_double(params,result);
+    if(i==0)
+      result = ecdsa_point_double(params,result);
+    else
+      result = ecdsa_point_add(params,result,p);
 	}
 	return result;
 }
@@ -47,4 +52,15 @@ ecdsa_point_t ecdsa_point_add(ecdsa_params_t params, ecdsa_point_t p1, ecdsa_poi
 	int y=ecdsa_mod(slope*(p1.x-x)-p1.y,params.p);
 	ecdsa_point_t result={x,y};
 	return result;
+}
+
+bool ecdsa_verify(ecdsa_params_t params, ecdsa_point_t p1,ecdsa_point_t g,ecdsa_point_t q)
+{
+	int w = ecdsa_mod_inverse(p1.y,params.n);
+	int u1=ecdsa_mod(params.z*w,params.n);
+	int u2=ecdsa_mod(p1.x*w,params.n);
+	ecdsa_point_t tmp1=ecdsa_point_times(params,u1-1,g);
+	ecdsa_point_t tmp2=ecdsa_point_times(params,u2-1,q);
+	ecdsa_point_t p=ecdsa_point_add(params,tmp1,tmp2);
+	return p.x==p1.x;
 }
