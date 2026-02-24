@@ -18,6 +18,9 @@ test:
 	gcc -g test-framework/unity.c oid.c test_oid.c -o test_oid.out
 	./test_oid.out
 
+	gcc -g test-framework/unity.c ecdsa.c test_ecdsa.c -o test_ecdsa.out
+	./test_ecdsa.out
+
 clean:
 	rm -rf *.out *.o *.dSYM
 
