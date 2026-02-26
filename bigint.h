@@ -4,12 +4,18 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef enum {
+  NEGATIVE=-1,
+  NON_NEGATIVE=1
+} sign_t;
+
 typedef struct bigint_t {
-	short sign;
+	sign_t sign;
 	uint8_t *data;
 	size_t length;
 } bigint_t;
 
+void bigint_ltrim(bigint_t *bi,uint8_t val);
 bigint_t *create_bigint(uint8_t *buf,size_t len);
 bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *add_bigint(bigint_t *num1, bigint_t *num2);

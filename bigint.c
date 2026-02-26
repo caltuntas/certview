@@ -8,10 +8,23 @@
 bigint_t *create_bigint(uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));
-  bigint->sign=(buf[0] & 0x80)==0x80;
+  if((buf[0] & 0x80)==0x80)
+    bigint->sign=NEGATIVE;
+  else
+    bigint->sign=NON_NEGATIVE;
   bigint->data=malloc(sizeof(uint8_t)*len);
   memcpy(bigint->data,buf,len);
   bigint->length=len;
+  if(bigint->sign==NEGATIVE) {
+    uint8_t *inc=calloc(len+1,sizeof(uint8_t));
+    inc[0]=1;
+    bigint_t *next2=create_bigint(inc,len+1);
+    bigint_t *result=sub_bigint(next2,bigint);
+    result->sign=NEGATIVE;
+    bigint_ltrim(result,0);
+    return result;
+  }
+  bigint_ltrim(bigint,0);
   return bigint;
 }
 
@@ -217,7 +230,7 @@ void bigint_ltrim(bigint_t *bi,uint8_t val)
 {
   uint8_t *ptr =bi->data;
   size_t len=bi->length;
-  while(len>0 && ptr!=NULL && *ptr==val) {
+  while(len>1 && ptr!=NULL && *ptr==val) {
     ++ptr, --len;
   }
   bi->length=len;
@@ -263,40 +276,49 @@ char *hex_to_decimal_str(uint8_t *hex,size_t len)
   return res;
 }
 
-//https://en.wikipedia.org/wiki/Horner%27s_method
+static bool is_empty(uint8_t *buf,size_t len)
+{
+  for(int i=0; i<len; i++){
+    if(buf[i]!=0)
+      return false;
+  }
+  return true;
+}
+
+//https://en.wikipedia.org/wiki/Long_division
 char *bigint_to_decimal_str(bigint_t *num)
 {
-  bool is_negative=false;
-  //check if it is negative
-  if((num->data[0] & 0x80)==0x80) {
-    is_negative=true;
-  }
   int obase=10;
+  int ibase=256;
   char *ibase_str="16";
   int total;
-  char *res=NULL;
-  for(int i=0; i<num->length; i++){
-    int part1=(num->data[i] >> 4) & 0x0F;
-    int part2=(num->data[i]) & 0x0F;
-    char num1[10];
-    sprintf(num1,"%d",part1);
-    char num2[10];
-    sprintf(num2,"%d",part2);
-    if(i==0){
-      res=add(mul(num1,ibase_str,obase),num2,obase);
-    }else {
-      res=add(mul(res,ibase_str,obase),num1,obase);
-      res=add(mul(res,ibase_str,obase),num2,obase);
+  int carry=0;
+  char *res=calloc(num->length*5,sizeof(char));;
+
+  uint8_t *arr=calloc(num->length,sizeof(uint8_t));
+  memcpy(arr,num->data,num->length);
+  while(is_empty(arr,num->length)==false){
+    int remainder=0;
+    for(int i=0; i<num->length; i++){
+      carry=arr[i] + remainder*ibase;
+      int quotient=carry / obase;
+      remainder=carry % obase;
+      arr[i]=quotient;
     }
+    char num1[10];
+    sprintf(num1,"%d",remainder);
+    int nlen=strlen(num1);
+    int rlen=strlen(res);
+    //TODO:create a dedicated string type and add push function
+    memmove(res+nlen, res, rlen);
+    memcpy(res,num1,nlen);
   }
-  //https://en.wikipedia.org/wiki/Two%27s_complement
-  if(is_negative) {
-    uint8_t *inc=calloc(num->length+1,sizeof(uint8_t));
-    inc[0]=1;
-    char *val=hex_to_decimal_str(inc,num->length+1);
-    char *result=sub(res,val);
-    ltrim(result,'0');
-    return result;
+  ltrim(res,'0');
+  if(num->sign==NEGATIVE) {
+    size_t len=strlen(res);
+    memmove(res+1, res, len+1);
+    res[0]='-';
+    return res;
   }
   ltrim(res,'0');
   return res;
