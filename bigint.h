@@ -23,10 +23,5 @@ bigint_t *sub_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *bigint_from_decimal_str(char *decimal);
 char *bigint_to_decimal_str(bigint_t *num);
 int compare_bigint(bigint_t *num1, bigint_t *num2);
-char *mul(char *x, char *y,int base);
-char *add(char *x, char *y,int base);
-char *sub(char *x, char *y);
-char *hex_to_decimal_str(uint8_t *hex,size_t len);
-int compare(char *x, char *y);
 
 #endif
