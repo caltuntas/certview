@@ -384,3 +384,46 @@ bigint_t *bigint_from_decimal_str(char *decimal)
   }
   return res;
 }
+
+bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
+{
+  int n=num1->length;
+  int m=num2->length;
+  int base=256;
+  int d=0;
+  for(int i=7; i>=0; i--){
+    int is_zero=(num2->data[m-1] >> i) & 1;
+    if(is_zero==0)
+      d++;
+    else
+      break;
+  }
+
+  bigint_t *bi=malloc(sizeof(*bi));
+  uint8_t *res=calloc(10,sizeof(*res));
+  bi->data=res;
+  bi->length=10;
+  return bi;
+}
+
+bigint_t *shift_left_bigint(bigint_t *num1,int bits)
+{
+  bigint_t *bi=malloc(sizeof(*bi));
+  uint8_t *res=calloc(10,sizeof(*res));
+  bi->data=res;
+  uint8_t carry=0;
+  for(int i=num1->length-1; i>=0; i--){
+    uint8_t old_num=num1->data[i];
+    uint8_t new_num=old_num << bits;
+    bi->data[i]=new_num | carry;
+    carry=(old_num >> (8-bits));
+  }
+  bi->length=num1->length;
+  if(carry!=0){
+    memmove(bi->data+1, bi->data, bi->length);
+    bi->data[0]=carry;
+    bi->length+=1;
+  }
+
+  return bi;
+}

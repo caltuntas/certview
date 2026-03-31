@@ -17,7 +17,13 @@ typedef struct {
   bigint_t num1;
   bigint_t num2;
   bigint_t result;
-} test_case_bigint_two_operand;
+} test_case_bigint_two_operands;
+
+typedef struct {
+  bigint_t num1;
+  int bits;
+  bigint_t result;
+} test_case_bigint_bit_shift;
 
 typedef struct {
   uint8_t *hex;
@@ -66,19 +72,18 @@ void tearDown(void)
 
 static void test_mul_bigint(void)
 {
-  test_case_bigint_two_operand cases[] = {
-    { BIGINT(1,0x05),BIGINT(1,0x10),BIGINT(1,0x50) },
-    { BIGINT(1,0x07),BIGINT(1,0x10),BIGINT(1,0x70) },
-    { BIGINT(1,0x0C),BIGINT(1,0x10),BIGINT(1,0xC0),},
-    { BIGINT(1,0x05),BIGINT(1,0x35),BIGINT(1,0x01,0x09) },
-    { BIGINT(1,0x07),BIGINT(1,0x08),BIGINT(1,0x38) },
-    { BIGINT(1,0xFA,0xCA),BIGINT(1,0x02,0x03),BIGINT(1,0x01,0xF8,0x84,0x5E) },
-    { BIGINT(NON_NEGATIVE,0xab,0x54,0xa9,0x8c,0xeb,0x1f,0x0a,0xd2),BIGINT(NON_NEGATIVE,0x10),BIGINT(NON_NEGATIVE,0x0a,0xb5,0x4a,0x98,0xce,0xb1,0xf0,0xad,0x20)},
-
+  test_case_bigint_two_operands cases[] = {
+    { BIGINT(NON_NEGATIVE,0x05),BIGINT(NON_NEGATIVE,0x10),BIGINT(NON_NEGATIVE,0x50) },
+    { BIGINT(NON_NEGATIVE,0x07),BIGINT(NON_NEGATIVE,0x10),BIGINT(NON_NEGATIVE,0x70) },
+    { BIGINT(NON_NEGATIVE,0x0C),BIGINT(NON_NEGATIVE,0x10),BIGINT(NON_NEGATIVE,0xC0),},
+    { BIGINT(NON_NEGATIVE,0x05),BIGINT(NON_NEGATIVE,0x35),BIGINT(NON_NEGATIVE,0x01,0x09) },
+    { BIGINT(NON_NEGATIVE,0x07),BIGINT(NON_NEGATIVE,0x08),BIGINT(NON_NEGATIVE,0x38) },
+    { BIGINT(NON_NEGATIVE,0xFA,0xCA),BIGINT(NON_NEGATIVE,0x02,0x03),BIGINT(NON_NEGATIVE,0x01,0xF8,0x84,0x5E) },
+    { BIGINT(NON_NEGATIVE,0XAB,0X54,0XA9,0X8C,0XEB,0X1F,0X0A,0XD2),BIGINT(NON_NEGATIVE,0X10),BIGINT(NON_NEGATIVE,0X0A,0XB5,0X4A,0X98,0XCE,0XB1,0XF0,0XAD,0X20)},
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
-    test_case_bigint_two_operand tc=cases[i];
+    test_case_bigint_two_operands tc=cases[i];
     bigint_t *result =mul_bigint(&tc.num1,&tc.num2);
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
@@ -175,7 +180,7 @@ static void test_decimal_to_bigint(void)
 
 static void test_add_bigint(void)
 {
-  test_case_bigint_two_operand cases[] = {
+  test_case_bigint_two_operands cases[] = {
     { BIGINT(1,0x05), BIGINT(1,0x10), BIGINT(1,0x15) },
     { BIGINT(1,0x07), BIGINT(1,0x10), BIGINT(1,0x17) },
     { BIGINT(1,0x0C), BIGINT(1,0x10), BIGINT(1,0x1C) },
@@ -186,7 +191,7 @@ static void test_add_bigint(void)
   };
 	size_t len=ARRAY_LEN(cases);
 	for(int i=0; i<len; i++){
-		test_case_bigint_two_operand tc=cases[i];
+		test_case_bigint_two_operands tc=cases[i];
     bigint_t *result =add_bigint(&tc.num1,&tc.num2);
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
@@ -199,7 +204,7 @@ static void test_add_bigint(void)
 
 static void test_sub_bigint(void)
 {
-  test_case_bigint_two_operand cases[] = {
+  test_case_bigint_two_operands cases[] = {
     { BIGINT(NON_NEGATIVE,0x05),BIGINT(NON_NEGATIVE,0x03),BIGINT(NON_NEGATIVE,0x02) },
     { BIGINT(NON_NEGATIVE,0x0A),BIGINT(NON_NEGATIVE,0x04),BIGINT(NON_NEGATIVE,0x06) },
     { BIGINT(NON_NEGATIVE,0x64),BIGINT(NON_NEGATIVE,0x32),BIGINT(NON_NEGATIVE,0x32) },
@@ -220,7 +225,7 @@ static void test_sub_bigint(void)
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
-    test_case_bigint_two_operand tc=cases[i];
+    test_case_bigint_two_operands tc=cases[i];
     bigint_t *result =sub_bigint(&tc.num1,&tc.num2);
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
@@ -248,6 +253,41 @@ static void test_compare_bigint(void)
 	}
 }
 
+static void test_div_bigint(void)
+{
+  test_case_bigint_two_operands cases[] = {
+    { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),BIGINT(1,0x0F,0xAB),BIGINT(1,0x0A,0xDA,0xDA) },
+  };
+  size_t len=ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_bigint_two_operands tc=cases[i];
+    bigint_t *result =div_bigint(&tc.num1,&tc.num2,NULL);
+    char *strnum1 =bigint_to_decimal_str(&tc.num1);
+    char *strnum2 =bigint_to_decimal_str(&tc.num2);
+    char *strres =bigint_to_decimal_str(result);
+    printf("%s÷%s=%s\n",strnum1,strnum2,strres);
+    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+  }
+}
+
+static void test_shift_left_bigint(void)
+{
+  test_case_bigint_bit_shift cases[] = {
+    { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),3,BIGINT(NON_NEGATIVE,0x05,0x50,0x97,0xF0,0x08) },
+    { BIGINT(NON_NEGATIVE,0x01,0x02),1,BIGINT(NON_NEGATIVE,0x02,0x04) }
+  };
+  size_t len=ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_bigint_bit_shift tc=cases[i];
+    bigint_t *result =shift_left_bigint(&tc.num1,tc.bits);
+    char *strnum1 =bigint_to_decimal_str(&tc.num1);
+    char *strres =bigint_to_decimal_str(result);
+    printf("%s<<%d=%s\n",strnum1,tc.bits,strres);
+    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+  }
+}
 
 int main(void)
 {
@@ -259,5 +299,7 @@ int main(void)
 	RUN_TEST(test_sub_bigint);
 	RUN_TEST(test_compare_bigint);
 	RUN_TEST(test_bigint_to_decimal);
+	//RUN_TEST(test_div_bigint);
+	RUN_TEST(test_shift_left_bigint);
   return UNITY_END();
 }
