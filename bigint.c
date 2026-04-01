@@ -409,20 +409,26 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 bigint_t *shift_left_bigint(bigint_t *num1,int bits)
 {
   bigint_t *bi=malloc(sizeof(*bi));
-  uint8_t *res=calloc(10,sizeof(*res));
+  int new_bytes=bits / 8;
+  int shift_size=bits % 8;
+  //pre-allocate possible carry byte in advance
+  size_t len=num1->length+new_bytes+1;
+  uint8_t *res=calloc(len,sizeof(*res));
   bi->data=res;
   uint8_t carry=0;
   for(int i=num1->length-1; i>=0; i--){
     uint8_t old_num=num1->data[i];
-    uint8_t new_num=old_num << bits;
+    uint8_t new_num=old_num << shift_size;
     bi->data[i]=new_num | carry;
-    carry=(old_num >> (8-bits));
+    carry=(old_num >> (8-shift_size));
   }
-  bi->length=num1->length;
+  bi->length=len;
   if(carry!=0){
     memmove(bi->data+1, bi->data, bi->length);
     bi->data[0]=carry;
-    bi->length+=1;
+  }else {
+    //reduce the pre-allocated carry length, if there is no carry byte
+    bi->length-=1;
   }
 
   return bi;
