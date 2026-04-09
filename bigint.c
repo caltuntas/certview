@@ -340,17 +340,9 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
     memmove(res+1, res, len+1);
     res[0]=digit;
     bigint->length++;
-    //char *str=strdup(res);
-    //char chr=digit+'0';
-    //strncpy(res,&chr,1);
-    //strcpy(res+1,str);
   }
   bigint_ltrim(bigint,0);
-  //if(is_negative) {
-  //  len=strlen(res);
-  //  memmove(res+1, res, len+1);
-  //  res[0]='-';
-  //}
+  bigint->sign=is_negative==0;
   return bigint;
 }
 
@@ -392,17 +384,51 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   int base=256;
   int d=0;
   for(int i=7; i>=0; i--){
-    int is_zero=(num2->data[m-1] >> i) & 1;
+    int is_zero=(num2->data[0] >> i) & 1;
     if(is_zero==0)
       d++;
     else
       break;
   }
+  bigint_t *u=shift_left_bigint(num1,d);
+  bigint_t *v=shift_left_bigint(num2,d);
+
+  uint8_t *res=calloc(n-m+1,sizeof(*res));
+
+  for(int j=0; j<=n-m; j++){
+    uint16_t numerator=(u->data[j] * base) + u->data[j+1];
+    uint16_t q=numerator / v->data[0];
+    uint16_t r=numerator % v->data[0];
+    printf("q=%d,r=%d\n",q,r);
+
+    while(q==base || q*v->data[1] > (r * base) + u->data[j+2]) {
+      q--;
+      r+=v->data[0];
+    }
+
+    uint8_t arr[]={0,q};
+    bigint_t *qbi=create_bigint(arr,2);
+    bigint_t *mulres=mul_bigint(qbi,v);
+
+    bigint_t *Uslice=malloc(sizeof(*Uslice));
+    Uslice->length=m+1;
+    uint8_t *slicebuf=calloc(Uslice->length,sizeof(*slicebuf));
+    memcpy(slicebuf,u->data+j,Uslice->length);
+    Uslice->data=slicebuf;
+
+    bigint_t *subres=sub_bigint(Uslice,mulres);
+
+    uint8_t *buf=calloc(Uslice->length,sizeof(*slicebuf));
+    int diff=Uslice->length-subres->length;
+    memcpy(buf+diff, subres->data, subres->length);
+    memcpy(u->data + j, buf,Uslice->length);
+
+    res[j]=q;
+  }
 
   bigint_t *bi=malloc(sizeof(*bi));
-  uint8_t *res=calloc(10,sizeof(*res));
   bi->data=res;
-  bi->length=10;
+  bi->length=n-m+1;
   return bi;
 }
 

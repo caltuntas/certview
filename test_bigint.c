@@ -227,12 +227,18 @@ static void test_sub_bigint(void)
   for(int i=0; i<len; i++){
     test_case_bigint_two_operands tc=cases[i];
     bigint_t *result =sub_bigint(&tc.num1,&tc.num2);
+    bigint_t *negativeres =sub_bigint(&tc.num2,&tc.num1);
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
     printf("%s-%s=%s\n",strnum1,strnum2,strres);
     TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
+    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+
+    TEST_ASSERT_EQUAL_INT(tc.result.length,negativeres->length);
+    TEST_ASSERT_EQUAL_INT(tc.result.sign,!negativeres->sign);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,negativeres->data,tc.result.length);
   }
 }
 
@@ -304,7 +310,7 @@ int main(void)
 	RUN_TEST(test_sub_bigint);
 	RUN_TEST(test_compare_bigint);
 	RUN_TEST(test_bigint_to_decimal);
-	//RUN_TEST(test_div_bigint);
+	RUN_TEST(test_div_bigint);
 	RUN_TEST(test_shift_left_bigint);
   return UNITY_END();
 }
