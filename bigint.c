@@ -299,6 +299,8 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
     is_negative=false;
     n1=num1;
     n2=num2;
+  } else {
+    return create_bigint((uint8_t[]){0},1);
   }
 
   int obase=256;
@@ -383,6 +385,25 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   int m=num2->length;
   int base=256;
   int d=0;
+
+  uint8_t *res=calloc(n-m+1,sizeof(*res));
+
+  if(m==1) {
+    uint16_t r=0;
+    for(int i=0; i<n; i++){
+      uint16_t numerator=(r * base) + num1->data[i];
+      uint16_t q=numerator / num2->data[0];
+      r=numerator % num2->data[0];
+      printf("q=%d,r=%d\n",q,r);
+      res[i]=q;
+    }
+    bigint_t *bi=malloc(sizeof(*bi));
+    bi->data=res;
+    bi->length=n-m+1;
+    bigint_ltrim(bi,0);
+    return bi;
+  }
+
   for(int i=7; i>=0; i--){
     int is_zero=(num2->data[0] >> i) & 1;
     if(is_zero==0)
@@ -393,7 +414,6 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   bigint_t *u=shift_left_bigint(num1,d);
   bigint_t *v=shift_left_bigint(num2,d);
 
-  uint8_t *res=calloc(n-m+1,sizeof(*res));
 
   for(int j=0; j<=n-m; j++){
     uint16_t numerator=(u->data[j] * base) + u->data[j+1];
@@ -423,6 +443,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     memcpy(buf+diff, subres->data, subres->length);
     memcpy(u->data + j, buf,Uslice->length);
 
+    printf("q[%d]=%d\n",j,q);
     res[j]=q;
   }
 
