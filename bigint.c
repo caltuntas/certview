@@ -381,16 +381,18 @@ bigint_t *bigint_from_decimal_str(char *decimal)
 
 bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 {
-  int n=num1->length;
-  int m=num2->length;
+  int len_dividend=num1->length;
+  int len_divisor=num2->length;
+  int len_diff=len_dividend-len_divisor;
+  int target_len=len_diff+len_divisor+1;
   int base=256;
   int d=0;
 
-  uint8_t *res=calloc(n-m+1,sizeof(*res));
+  uint8_t *res=calloc(len_diff+1,sizeof(*res));
 
-  if(m==1) {
+  if(len_divisor==1) {
     uint16_t r=0;
-    for(int i=0; i<n; i++){
+    for(int i=0; i<len_dividend; i++){
       uint16_t numerator=(r * base) + num1->data[i];
       uint16_t q=numerator / num2->data[0];
       r=numerator % num2->data[0];
@@ -399,7 +401,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     }
     bigint_t *bi=malloc(sizeof(*bi));
     bi->data=res;
-    bi->length=n-m+1;
+    bi->length=len_diff+1;
     bigint_ltrim(bi,0);
     return bi;
   }
@@ -411,11 +413,19 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     else
       break;
   }
-  bigint_t *u=shift_left_bigint(num1,d);
+  bigint_t *U=shift_left_bigint(num1,d);
+  int udiff=target_len-U->length;
+  uint8_t *Ubuf=calloc(target_len,sizeof(*Ubuf));
+  memcpy(Ubuf+udiff,U->data,U->length);
+
+  bigint_t *u=malloc(sizeof(*u));
+  u->data=Ubuf;
+  u->length=target_len;
+
   bigint_t *v=shift_left_bigint(num2,d);
 
 
-  for(int j=0; j<=n-m; j++){
+  for(int j=0; j<=len_diff; j++){
     uint16_t numerator=(u->data[j] * base) + u->data[j+1];
     uint16_t q=numerator / v->data[0];
     uint16_t r=numerator % v->data[0];
@@ -431,7 +441,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     bigint_t *mulres=mul_bigint(qbi,v);
 
     bigint_t *Uslice=malloc(sizeof(*Uslice));
-    Uslice->length=m+1;
+    Uslice->length=len_divisor+1;
     uint8_t *slicebuf=calloc(Uslice->length,sizeof(*slicebuf));
     memcpy(slicebuf,u->data+j,Uslice->length);
     Uslice->data=slicebuf;
@@ -449,7 +459,8 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 
   bigint_t *bi=malloc(sizeof(*bi));
   bi->data=res;
-  bi->length=n-m+1;
+  bi->length=len_diff+1;
+  bigint_ltrim(bi,0);
   return bi;
 }
 
