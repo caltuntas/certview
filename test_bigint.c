@@ -20,6 +20,13 @@ typedef struct {
 } test_case_bigint_two_operands;
 
 typedef struct {
+  bigint_t dividend;
+  bigint_t divisor;
+  bigint_t quotient;
+  bigint_t remainder;
+} test_case_bigint_division;
+
+typedef struct {
   bigint_t num1;
   int bits;
   bigint_t result;
@@ -264,7 +271,7 @@ static void test_compare_bigint(void)
 
 static void test_div_bigint(void)
 {
-  test_case_bigint_two_operands cases[] = {
+  test_case_bigint_division cases[] = {
     { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),BIGINT(1,0x0F,0xAB),BIGINT(1,0x0A,0xDA,0xDA) },
     { BIGINT(1,0x12,0x34,0x56),BIGINT(1,0x01),BIGINT(1,0x12,0x34,0x56) },
     { BIGINT(1,0xFF,0xFF,0xFF),BIGINT(1,0xFF),BIGINT(1,0x01,0x01,0x01) },
@@ -349,14 +356,14 @@ static void test_div_bigint(void)
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
-    test_case_bigint_two_operands tc=cases[i];
-    bigint_t *result =div_bigint(&tc.num1,&tc.num2,NULL);
-    char *strnum1 =bigint_to_decimal_str(&tc.num1);
-    char *strnum2 =bigint_to_decimal_str(&tc.num2);
-    char *strres =bigint_to_decimal_str(result);
-    printf("case=%d %s÷%s=%s\n",i,strnum1,strnum2,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    test_case_bigint_division tc=cases[i];
+    bigint_t *quotient =div_bigint(&tc.dividend,&tc.divisor,NULL);
+    char *dividend_str =bigint_to_decimal_str(&tc.dividend);
+    char *divisor_str =bigint_to_decimal_str(&tc.divisor);
+    char *quotient_str =bigint_to_decimal_str(quotient);
+    printf("case=%d %s÷%s=%s\n",i,dividend_str,divisor_str,quotient_str);
+    TEST_ASSERT_EQUAL_INT(tc.quotient.length,quotient->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.quotient.data,quotient->data,tc.quotient.length);
   }
 }
 
