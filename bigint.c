@@ -457,6 +457,11 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     res[j]=q;
   }
 
+  printf("final u[]=");
+  for(int i=0; i<target_len; i++){
+    printf("%02X,",u->data[i]);
+  }
+
   bigint_t *bi=malloc(sizeof(*bi));
   bi->data=res;
   bi->length=len_diff+1;
@@ -488,6 +493,35 @@ bigint_t *shift_left_bigint(bigint_t *num1,int bits)
     //reduce the pre-allocated carry length, if there is no carry byte
     bi->length-=1;
   }
+  return bi;
+}
 
+bigint_t *shift_right_bigint(bigint_t *num1,int bits)
+{
+  bigint_t *bi=malloc(sizeof(*bi));
+  int disposed_bytes=bits / 8;
+  int shift_size=bits % 8;
+  if(shift_size==0 && bits!=0)
+    shift_size=8;
+
+  size_t len=0;
+  if(disposed_bytes>=num1->length){
+    len=1;
+  }else{
+    len=num1->length-disposed_bytes;
+  }
+  uint8_t *res=calloc(len,sizeof(*res));
+  bi->data=res;
+  uint8_t carry=0;
+  for(int i=0; i<num1->length; i++){
+    uint8_t old_num=num1->data[i];
+    uint8_t new_num=old_num >> shift_size;
+    bi->data[i]=new_num | carry;
+    carry=(old_num << (8-shift_size));
+  }
+  bi->length=len;
+  if(disposed_bytes!=0 && shift_size==8){
+    memmove(bi->data, bi->data+disposed_bytes, bi->length);
+  }
   return bi;
 }

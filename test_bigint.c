@@ -269,10 +269,45 @@ static void test_compare_bigint(void)
 	}
 }
 
+/*
+2853371393%4011=863
+1193046%1=0
+16777215%255=0
+65534%2=0
+256%2=0
+768%3=0
+65535%3=0
+65280%255=0
+65025%254=1
+32768%128=0
+65535%128=7F
+1193046%1=0
+16%32=10
+256%255=1
+65536%2=0
+131072%2=0
+4294967295%2=1
+4294967295%15=0
+11184810%2=0
+5592405%5=0
+65535%2=1
+305419896%4660=DA8
+2864434397%74565=4DD2
+268435456%256=0
+16777216%65535=100
+536870912%2097151=100
+1099511627775%65535=FF
+2863311530%21845=0
+4294967296%65536=0
+1193046%1193045=1
+244837814047284%12513025=836E08
+16772829%65518=DD
+4886718345%74565=6789
+ */
 static void test_div_bigint(void)
 {
   test_case_bigint_division cases[] = {
-    { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),BIGINT(1,0x0F,0xAB),BIGINT(1,0x0A,0xDA,0xDA) },
+    { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),BIGINT(1,0x0F,0xAB),BIGINT(1,0x0A,0xDA,0xDA),BIGINT(1,0x08,0x63) },
     { BIGINT(1,0x12,0x34,0x56),BIGINT(1,0x01),BIGINT(1,0x12,0x34,0x56) },
     { BIGINT(1,0xFF,0xFF,0xFF),BIGINT(1,0xFF),BIGINT(1,0x01,0x01,0x01) },
     { BIGINT(1,0xFF,0xFE),BIGINT(1,0x02),BIGINT(1,0x7F,0xFF) },
@@ -390,6 +425,37 @@ static void test_shift_left_bigint(void)
   }
 }
 
+static void test_shift_right_bigint(void)
+{
+  test_case_bigint_bit_shift cases[] = {
+    { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),3, BIGINT(NON_NEGATIVE,0x15,0x42,0x5F,0xC0) },
+    { BIGINT(NON_NEGATIVE,0x02,0x04),1, BIGINT(NON_NEGATIVE,0x01,0x02) },
+    { BIGINT(NON_NEGATIVE,0xFF,0xFF,0xFF),1, BIGINT(NON_NEGATIVE,0x7F,0xFF,0xFF) },
+    { BIGINT(NON_NEGATIVE,0xFF,0xFF,0xFF),0, BIGINT(NON_NEGATIVE,0xFF,0xFF,0xFF) },
+    { BIGINT(NON_NEGATIVE,0x12,0x34,0x56),8, BIGINT(NON_NEGATIVE,0x12,0x34) },
+    { BIGINT(NON_NEGATIVE,0x12,0x34,0x56),12, BIGINT(NON_NEGATIVE,0x01,0x23) },
+    { BIGINT(NON_NEGATIVE,0x80,0x00),1, BIGINT(NON_NEGATIVE,0x40,0x00) },
+    { BIGINT(NON_NEGATIVE,0x80,0x00),8, BIGINT(NON_NEGATIVE,0x80) },
+    { BIGINT(NON_NEGATIVE,0x01,0x00),16, BIGINT(NON_NEGATIVE,0x00) },
+    { BIGINT(NON_NEGATIVE,0xFF,0xFF),32, BIGINT(NON_NEGATIVE,0x00) },
+    { BIGINT(NON_NEGATIVE,0xFF),1, BIGINT(NON_NEGATIVE,0x7F) },
+    { BIGINT(NON_NEGATIVE,0xFF),7, BIGINT(NON_NEGATIVE,0x01) },
+    { BIGINT(NON_NEGATIVE,0xFF),8, BIGINT(NON_NEGATIVE,0x00) },
+    { BIGINT(NON_NEGATIVE,0x01,0x00),1, BIGINT(NON_NEGATIVE,0x00,0x80) },
+    { BIGINT(NON_NEGATIVE,0x03,0xFF),1, BIGINT(NON_NEGATIVE,0x01,0xFF) },
+  };
+  size_t len=ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_bigint_bit_shift tc=cases[i];
+    bigint_t *result =shift_right_bigint(&tc.num1,tc.bits);
+    char *strnum1 =bigint_to_decimal_str(&tc.num1);
+    char *strres =bigint_to_decimal_str(result);
+    printf("%s>>%d=%s\n",strnum1,tc.bits,strres);
+    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+  }
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -402,5 +468,6 @@ int main(void)
 	RUN_TEST(test_bigint_to_decimal);
 	RUN_TEST(test_div_bigint);
 	RUN_TEST(test_shift_left_bigint);
+	RUN_TEST(test_shift_right_bigint);
   return UNITY_END();
 }
