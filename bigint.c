@@ -391,14 +391,25 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   uint8_t *res=calloc(len_diff+1,sizeof(*res));
 
   if(len_divisor==1) {
-    uint16_t r=0;
+    uint16_t rem=0;
     for(int i=0; i<len_dividend; i++){
-      uint16_t numerator=(r * base) + num1->data[i];
+      uint16_t numerator=(rem * base) + num1->data[i];
       uint16_t q=numerator / num2->data[0];
-      r=numerator % num2->data[0];
-      printf("q=%d,r=%d\n",q,r);
+      rem=numerator % num2->data[0];
+      printf("q=%d,r=%d\n",q,rem);
       res[i]=q;
     }
+
+    if(remainder!=NULL) {
+      bigint_t *r=malloc(sizeof(*r));
+      r->data=calloc(1,sizeof(uint8_t));
+      r->data[0]=rem;
+      r->length=1;
+      bigint_ltrim(r,0);
+      bigint_t *v=shift_right_bigint(r,d);
+      *remainder=v;
+    }
+
     bigint_t *bi=malloc(sizeof(*bi));
     bi->data=res;
     bi->length=len_diff+1;
@@ -460,6 +471,15 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   printf("final u[]=");
   for(int i=0; i<target_len; i++){
     printf("%02X,",u->data[i]);
+  }
+
+  if(remainder!=NULL) {
+    bigint_t *r=malloc(sizeof(*r));
+    r->data=u->data;
+    r->length=target_len;
+    bigint_t *v=shift_right_bigint(r,d);
+    bigint_ltrim(v,0);
+    *remainder=v;
   }
 
   bigint_t *bi=malloc(sizeof(*bi));
