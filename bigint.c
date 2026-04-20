@@ -303,6 +303,17 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
 {
   bigint_t *n1;
   bigint_t *n2;
+  if(num1->sign!=num2->sign){
+    int s1=num1->sign;
+    int s2=num2->sign;
+    num1->sign=NON_NEGATIVE;
+    num2->sign=NON_NEGATIVE;
+    bigint_t *res=add_bigint(num1,num2);
+    num1->sign=s1;
+    num2->sign=s2;
+    res->sign=s1;
+    return res;
+  }
   int cmp=compare_bigint(num1,num2);
   bool first_is_bigger=true;
   if (cmp<0) {

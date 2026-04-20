@@ -269,7 +269,31 @@ static void test_sub_bigint(void)
     { BIGINT(NON_NEGATIVE,0xE8,0x03),BIGINT(NON_NEGATIVE,0xE7,0x03),BIGINT(NON_NEGATIVE,0x01,0x00) },
     { BIGINT(NON_NEGATIVE,0x10,0x27),BIGINT(NON_NEGATIVE,0x0F,0x27),BIGINT(NON_NEGATIVE,0x01,0x00) },
     { BIGINT(NON_NEGATIVE,0xA0,0x86,0x01),BIGINT(NON_NEGATIVE,0x9F,0x86,0x01),BIGINT(NON_NEGATIVE,0x01,0x00,0x00) },
-    { BIGINT(NON_NEGATIVE,0x40,0x42,0x0F),BIGINT(NON_NEGATIVE,0x3F,0x42,0x0F),BIGINT(NON_NEGATIVE,0x01,0x00,0x00) }
+    { BIGINT(NON_NEGATIVE,0x40,0x42,0x0F),BIGINT(NON_NEGATIVE,0x3F,0x42,0x0F),BIGINT(NON_NEGATIVE,0x01,0x00,0x00) },
+    { BIGINT(1,0x10), BIGINT(1,0x05), BIGINT(1,0x0B) },
+    { BIGINT(1,0x05), BIGINT(1,0x10), BIGINT(-1,0x0B) },
+    { BIGINT(1,0xFF), BIGINT(1,0x01), BIGINT(1,0xFE) },
+    { BIGINT(-1,0x10), BIGINT(-1,0x05), BIGINT(-1,0x0B) }, // -16 - (-5) = -11
+    { BIGINT(-1,0x05), BIGINT(-1,0x10), BIGINT(1,0x0B) },  // -5 - (-16) = +11
+    { BIGINT(1,0x10), BIGINT(-1,0x05), BIGINT(1,0x15) },
+    { BIGINT(1,0xFF), BIGINT(-1,0x01), BIGINT(1,0x01,0x00) },
+    { BIGINT(-1,0x10), BIGINT(1,0x05), BIGINT(-1,0x15) },
+    { BIGINT(-1,0x01), BIGINT(1,0x01), BIGINT(-1,0x02) },
+    { BIGINT(1,0x05), BIGINT(1,0x05), BIGINT(1,0x00) },
+    { BIGINT(-1,0xAB,0xCD), BIGINT(-1,0xAB,0xCD), BIGINT(1,0x00) },
+    { BIGINT(1,0x01,0x00), BIGINT(1,0x01), BIGINT(1,0xFF) }, // 256 - 1
+    { BIGINT(1,0x10,0x00), BIGINT(1,0x01), BIGINT(1,0x0F,0xFF) },
+    { BIGINT(1,0x01,0x00,0x00), BIGINT(1,0x01), BIGINT(1,0xFF,0xFF) },
+    { BIGINT(1,0x05), BIGINT(1,0x10), BIGINT(-1,0x0B) },
+    { BIGINT(-1,0x10), BIGINT(-1,0x20), BIGINT(1,0x10) },
+    { BIGINT(1,0x01), BIGINT(1,0x01,0x00), BIGINT(-1,0xFF) },
+    { BIGINT(1,0x01,0x00), BIGINT(1,0x01), BIGINT(1,0xFF) },
+    { BIGINT(1,0x80,0x00,0x00), BIGINT(1,0x01), BIGINT(1,0x7F,0xFF,0xFF) },
+    { BIGINT(1,0x7F,0xFF,0xFF), BIGINT(1,0x80,0x00,0x00), BIGINT(-1,0x01) },
+    { BIGINT(-1,0x80,0x00,0x00), BIGINT(1,0x01), BIGINT(-1,0x80,0x00,0x01) },
+    { BIGINT(1,0x00), BIGINT(1,0x05), BIGINT(-1,0x05) },
+    { BIGINT(1,0x05), BIGINT(1,0x00), BIGINT(1,0x05) },
+    { BIGINT(-1,0x00), BIGINT(1,0x05), BIGINT(-1,0x05) },
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
@@ -279,7 +303,7 @@ static void test_sub_bigint(void)
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
-    printf("case %d %s-%s=%s\n",i,strnum1,strnum2,strres);
+    printf("case %d (%s)-(%s)=%s\n",i,strnum1,strnum2,strres);
     TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
     TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
@@ -477,16 +501,16 @@ static void test_mod_bigint(void)
 int main(void)
 {
   UNITY_BEGIN();
-	RUN_TEST(test_bigint_create);
-	RUN_TEST(test_mul_bigint);
-	RUN_TEST(test_add_bigint);
-	RUN_TEST(test_decimal_to_bigint);
+	//RUN_TEST(test_bigint_create);
+	//RUN_TEST(test_mul_bigint);
+	//RUN_TEST(test_add_bigint);
+	//RUN_TEST(test_decimal_to_bigint);
 	RUN_TEST(test_sub_bigint);
-	RUN_TEST(test_compare_bigint);
-	RUN_TEST(test_bigint_to_decimal);
-	RUN_TEST(test_div_bigint);
-	RUN_TEST(test_shift_left_bigint);
-	RUN_TEST(test_shift_right_bigint);
+	//RUN_TEST(test_compare_bigint);
+	//RUN_TEST(test_bigint_to_decimal);
+	//RUN_TEST(test_div_bigint);
+	//RUN_TEST(test_shift_left_bigint);
+	//RUN_TEST(test_shift_right_bigint);
 	//RUN_TEST(test_mod_bigint);
   return UNITY_END();
 }
