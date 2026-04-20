@@ -131,6 +131,7 @@ static void test_bigint_create(void)
 static void test_bigint_to_decimal(void)
 {
   test_case_bigint_to_decimal cases[] = {
+    { BIGINT(NON_NEGATIVE,0x00),"0"},
     { BIGINT(NEGATIVE,0x05,0x32),"-1330"},
     { BIGINT(NON_NEGATIVE,0x87),"135"},
     { BIGINT(NEGATIVE,0x01),"-1"},

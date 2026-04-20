@@ -197,6 +197,10 @@ char *bigint_to_decimal_str(bigint_t *num)
   int total;
   int carry=0;
   char *res=calloc(num->length*5,sizeof(char));;
+  if(bigint_is_zero(num)){
+    *res='0';
+    return res;
+  }
 
   uint8_t *arr=calloc(num->length,sizeof(uint8_t));
   memcpy(arr,num->data,num->length);
