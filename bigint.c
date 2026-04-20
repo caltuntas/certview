@@ -5,6 +5,13 @@
 #include <stdbool.h>
 #include "bigint.h"
 
+bool bigint_is_zero(bigint_t *num)
+{
+  if(num!=NULL && num->length==1 && num->data[0]==0)
+    return true;
+  return false;
+}
+
 bigint_t *create_bigint(uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));
@@ -39,6 +46,9 @@ bigint_t *add_bigint(bigint_t *num1, bigint_t *num2)
   int carry=0;
   int len=len_x>len_y?len_x:len_y;
   int diff=abs(len_x-len_y);
+  if(num1->sign!=num2->sign){
+    return sub_bigint(num1,num2);
+  }
   int counter=0;
   for (int i=len-1; i>=0; i--){
     int digit_y=0;
@@ -73,6 +83,10 @@ bigint_t *add_bigint(bigint_t *num1, bigint_t *num2)
     }
     bi->length++;
   }
+  bigint_ltrim(bi,0);
+  bi->sign=num1->sign;
+  if(bigint_is_zero(bi))
+    bi->sign=NON_NEGATIVE;
   return bi;
 }
 
@@ -290,13 +304,13 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
   bigint_t *n1;
   bigint_t *n2;
   int cmp=compare_bigint(num1,num2);
-  bool is_negative=false;
+  bool first_is_bigger=true;
   if (cmp<0) {
-    is_negative=true;
+    first_is_bigger=false;
     n1=num2;
     n2=num1;
   } else if (cmp > 0) {
-    is_negative=false;
+    first_is_bigger=true;
     n1=num1;
     n2=num2;
   } else {
@@ -344,7 +358,10 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
     bigint->length++;
   }
   bigint_ltrim(bigint,0);
-  bigint->sign=is_negative==0;
+  if(first_is_bigger)
+    bigint->sign=num1->sign;
+  else 
+    bigint->sign=NEGATIVE*num1->sign;
   return bigint;
 }
 
@@ -357,6 +374,7 @@ bigint_t *bigint_from_decimal_str(char *decimal)
   int len=strlen(decimal);
   uint8_t ten[]={10};
   bigint_t *ibase=create_bigint(ten,1);
+  ibase->sign=NON_NEGATIVE;
   if(len==1) {
     uint8_t d1=decimal[0]-'0';
     res=create_bigint(&d1,1);
@@ -364,26 +382,23 @@ bigint_t *bigint_from_decimal_str(char *decimal)
     for(int i=0; i<len-1; i++){
       uint8_t d1=decimal[i]-'0';
       bigint_t *num1=create_bigint(&d1,1);
+      num1->sign=NON_NEGATIVE;
       uint8_t d2=decimal[i+1]-'0';
       bigint_t *num2=create_bigint(&d2,1);
+      num2->sign=NON_NEGATIVE;
       bigint_t *mulres=NULL;
       if (i==0) {
         mulres=mul_bigint(num1,ibase);
+        mulres->sign=NON_NEGATIVE;
         res=add_bigint(mulres,num2);
       }else {
         mulres=mul_bigint(res,ibase);
+        mulres->sign=NON_NEGATIVE;
         res=add_bigint(mulres,num2);
       }
     }
   }
   return res;
-}
-
-bool bigint_is_zero(bigint_t *num)
-{
-  if(num!=NULL && num->length==1 && num->data[0]==0)
-    return true;
-  return false;
 }
 
 bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
