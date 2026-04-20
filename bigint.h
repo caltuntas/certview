@@ -23,6 +23,7 @@ bigint_t *sub_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder);
 bigint_t *shift_left_bigint(bigint_t *num1,int bits);
 bigint_t *shift_right_bigint(bigint_t *num1,int bits);
+bigint_t *mod_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *bigint_from_decimal_str(char *decimal);
 char *bigint_to_decimal_str(bigint_t *num);
 int compare_bigint(bigint_t *num1, bigint_t *num2);

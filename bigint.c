@@ -379,6 +379,13 @@ bigint_t *bigint_from_decimal_str(char *decimal)
   return res;
 }
 
+bool bigint_is_zero(bigint_t *num)
+{
+  if(num!=NULL && num->length==1 && num->data[0]==0)
+    return true;
+  return false;
+}
+
 bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 {
   int len_dividend=num1->length;
@@ -407,13 +414,19 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
       r->length=1;
       bigint_ltrim(r,0);
       bigint_t *v=shift_right_bigint(r,d);
+      v->sign=num1->sign;
+      if(bigint_is_zero(v))
+        v->sign=NON_NEGATIVE;
       *remainder=v;
     }
 
     bigint_t *bi=malloc(sizeof(*bi));
+    bi->sign = num1->sign * num2->sign;
     bi->data=res;
     bi->length=len_diff+1;
     bigint_ltrim(bi,0);
+    if(bigint_is_zero(bi))
+      bi->sign=NON_NEGATIVE;
     return bi;
   }
 
@@ -479,13 +492,19 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     r->length=target_len;
     bigint_t *v=shift_right_bigint(r,d);
     bigint_ltrim(v,0);
+    v->sign=num1->sign;
+    if(bigint_is_zero(v))
+      v->sign=NON_NEGATIVE;
     *remainder=v;
   }
 
   bigint_t *bi=malloc(sizeof(*bi));
   bi->data=res;
+  bi->sign = num1->sign * num2->sign;
   bi->length=len_diff+1;
   bigint_ltrim(bi,0);
+  if(bigint_is_zero(bi))
+    bi->sign=NON_NEGATIVE;
   return bi;
 }
 
@@ -544,4 +563,15 @@ bigint_t *shift_right_bigint(bigint_t *num1,int bits)
     memmove(bi->data, bi->data+disposed_bytes, bi->length);
   }
   return bi;
+}
+
+bigint_t *mod_bigint(bigint_t *num1, bigint_t *num2)
+{
+  bigint_t *remainder=NULL;
+  bigint_t *quotient =div_bigint(num1,num2,&remainder);
+  if(remainder->sign==NEGATIVE) {
+    bigint_t *res=add_bigint(remainder,num2);
+    return res;
+  }
+  return remainder;
 }
