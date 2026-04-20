@@ -26,6 +26,7 @@ bigint_t *create_bigint(uint8_t *buf,size_t len)
     uint8_t *inc=calloc(len+1,sizeof(uint8_t));
     inc[0]=1;
     bigint_t *next2=create_bigint(inc,len+1);
+    next2->sign=NEGATIVE;
     bigint_t *result=sub_bigint(next2,bigint);
     result->sign=NEGATIVE;
     bigint_ltrim(result,0);
@@ -46,8 +47,28 @@ bigint_t *add_bigint(bigint_t *num1, bigint_t *num2)
   int carry=0;
   int len=len_x>len_y?len_x:len_y;
   int diff=abs(len_x-len_y);
+  int cmp=compare_bigint(num1,num2);
+  bool first_is_bigger=true;
+  if (cmp<0) {
+    first_is_bigger=false;
+  } else if (cmp > 0) {
+    first_is_bigger=true;
+  } 
   if(num1->sign!=num2->sign){
-    return sub_bigint(num1,num2);
+    int s1=num1->sign;
+    int s2=num2->sign;
+    num1->sign=NON_NEGATIVE;
+    num2->sign=NON_NEGATIVE;
+    bigint_t *subres=sub_bigint(num1,num2);
+    num1->sign=s1;
+    num2->sign=s2;
+    if(first_is_bigger)
+      subres->sign=num1->sign;
+    else
+      subres->sign=num2->sign;
+    if(bigint_is_zero(subres))
+      subres->sign=NON_NEGATIVE;
+    return subres;
   }
   int counter=0;
   for (int i=len-1; i>=0; i--){

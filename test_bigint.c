@@ -120,6 +120,8 @@ static void test_bigint_create(void)
 	for(int i=0; i<len; i++){
 		test_case_bigint_create tc=cases[i];
     bigint_t *actual=create_bigint(tc.hex,tc.length);
+    char *decimal_str =bigint_to_decimal_str(actual);
+    printf("case=%d %s\n",i,decimal_str);
     TEST_ASSERT_EQUAL_INT(actual->sign,tc.result.sign);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(actual->data,tc.result.data,tc.result.length);
 	}
@@ -242,7 +244,7 @@ static void test_add_bigint(void)
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
-    printf("%s+%s=%s\n",strnum1,strnum2,strres);
+    printf("case %d (%s)+(%s)=%s\n",i,strnum1,strnum2,strres);
     TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
     TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
@@ -501,16 +503,16 @@ static void test_mod_bigint(void)
 int main(void)
 {
   UNITY_BEGIN();
-	//RUN_TEST(test_bigint_create);
-	//RUN_TEST(test_mul_bigint);
-	//RUN_TEST(test_add_bigint);
-	//RUN_TEST(test_decimal_to_bigint);
+	RUN_TEST(test_bigint_create);
+	RUN_TEST(test_mul_bigint);
+	RUN_TEST(test_add_bigint);
+	RUN_TEST(test_decimal_to_bigint);
 	RUN_TEST(test_sub_bigint);
-	//RUN_TEST(test_compare_bigint);
-	//RUN_TEST(test_bigint_to_decimal);
-	//RUN_TEST(test_div_bigint);
-	//RUN_TEST(test_shift_left_bigint);
-	//RUN_TEST(test_shift_right_bigint);
-	//RUN_TEST(test_mod_bigint);
+	RUN_TEST(test_compare_bigint);
+	RUN_TEST(test_bigint_to_decimal);
+	RUN_TEST(test_div_bigint);
+	RUN_TEST(test_shift_left_bigint);
+	RUN_TEST(test_shift_right_bigint);
+	RUN_TEST(test_mod_bigint);
   return UNITY_END();
 }
