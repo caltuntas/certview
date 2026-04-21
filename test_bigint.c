@@ -486,6 +486,13 @@ static void test_mod_bigint(void)
     { BIGINT(1, 0x05), BIGINT(1, 0x10), BIGINT(1, 0x05) }, // 5 % 16 = 5
     { BIGINT(1, 0x01,0x00), BIGINT(1, 0x02,0x00), BIGINT(1, 0x01,0x00) }, // 256 % 512 = 256
     { BIGINT(NEGATIVE, 0x01), BIGINT(1, 0x11), BIGINT(1, 0x10) }, // -1 % 17 = 16
+    { BIGINT(NEGATIVE, 0x12), BIGINT(1, 0x11), BIGINT(1, 0x10) }, // -18 % 17 = 16
+    { BIGINT(NEGATIVE, 0x11), BIGINT(1, 0x11), BIGINT(1, 0x00) }, // -17 % 17 = 0
+    { BIGINT(NEGATIVE, 0x01,0x00), BIGINT(1, 0x11), BIGINT(1, 0x10) }, // -256 % 17 = 16
+    { BIGINT(1, 0x12,0x34), BIGINT(1, 0x10), BIGINT(1, 0x04) }, // mod 16
+    { BIGINT(1, 0xAB,0xCD), BIGINT(1, 0x01,0x00), BIGINT(1, 0xCD) }, // mod 256
+    { BIGINT(1, 0xFF,0xFF,0xFF,0xFF), BIGINT(1, 0xFF,0xFF), BIGINT(1, 0x00) },
+    { BIGINT(1, 0x01,0x00,0x00), BIGINT(1, 0xFF,0xFF), BIGINT(1, 0x01) },
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
