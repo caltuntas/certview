@@ -10,3 +10,4 @@ tests.out*
 certview
 *.asm
 debug
+tags

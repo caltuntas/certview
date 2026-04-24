@@ -14,6 +14,7 @@ typedef struct ecdsa_params_t {
 typedef struct ecdsa_point_t {
 	int x;
 	int y;
+  bool is_infinity;
 } ecdsa_point_t;
 
 int ecdsa_mod(int num, unsigned int divisor);

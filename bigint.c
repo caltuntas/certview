@@ -437,6 +437,9 @@ bigint_t *bigint_from_decimal_str(char *decimal)
   return res;
 }
 
+//https://ridiculousfish.com/blog/posts/labor-of-division-episode-iv.html
+//https://skanthak.hier-im-netz.de/division.html
+//https://www.hvks.com/Numerical/Downloads/HVE%20The%20Math%20behind%20arbitrary%20precision.pdf
 bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 {
   int len_dividend=num1->length;
