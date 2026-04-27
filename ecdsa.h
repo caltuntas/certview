@@ -18,6 +18,7 @@ typedef struct ecdsa_point_t {
 } ecdsa_point_t;
 
 int ecdsa_mod(int num, unsigned int divisor);
+int ecdsa_gcd(int dividend, int divisor);
 int ecdsa_mod_inverse(int num, unsigned int divisor);
 ecdsa_point_t ecdsa_point_times(ecdsa_params_t params, int times,ecdsa_point_t p);
 ecdsa_point_t ecdsa_point_add(ecdsa_params_t params, ecdsa_point_t p1, ecdsa_point_t p2);

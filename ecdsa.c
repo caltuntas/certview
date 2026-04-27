@@ -11,6 +11,20 @@ int ecdsa_mod(int num, unsigned int divisor)
 	}
 }
 
+int ecdsa_gcd(int dividend, int divisor) 
+{
+  if(divisor==0)
+    return dividend;
+  if(dividend==0)
+    return divisor;
+  int cur_dividend=dividend, cur_divisor=divisor,res;
+  while((res=cur_dividend % cur_divisor)!=0) {
+    cur_dividend=cur_divisor;
+    cur_divisor=res;
+  } 
+  return cur_divisor;
+}
+
 int ecdsa_mod_inverse(int num, unsigned int divisor) 
 {
 	int res=0,counter=0;

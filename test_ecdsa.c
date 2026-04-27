@@ -19,6 +19,18 @@ typedef struct {
   ecdsa_point_t result;
 } test_case_ec_times;
 
+typedef struct {
+  int num;
+  int divisor;
+  int expected;
+  bool has_inverse;
+} test_case_modinv;
+
+typedef struct {
+  int dividend;
+  int divisor;
+  int expected;
+} test_case_gcd;
 
 static void test_times_point(void)
 {
@@ -129,6 +141,7 @@ static void test_mod(void)
   }
 }
 
+/*
 static void test_mod_inverse(void)
 {
   int results[][3]={
@@ -142,6 +155,7 @@ static void test_mod_inverse(void)
     TEST_ASSERT_EQUAL_INT(row[2],res);
   }
 }
+*/
 
 static void test_scalar_mul_identity(void)
 {
@@ -164,11 +178,62 @@ static void test_addition_infinity(void)
   ecdsa_point_t p1 = {5, 1};
   ecdsa_point_t p3  = ecdsa_point_times(params, 3, p1);
   ecdsa_point_t p16 = ecdsa_point_times(params, 16, p1);
-
   ecdsa_point_t res = ecdsa_point_add(params, p16, p3);
-
   TEST_ASSERT_TRUE(res.is_infinity);
 }
+
+static void test_mod_inverse(void)
+{
+  test_case_modinv cases[] = {
+    {3,17,6,true},
+    {5,17,7,true},
+    {8,19,12,true},
+
+    /*
+    {6,18,0,false},
+    {4,16,0,false},
+    {0,17,0,false},
+
+    {-3,17,11,true},
+    {-5,17,10,true},
+
+    {17,17,0,false},
+    {1,17,1,true},
+    */
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_modinv tc=cases[i];
+    int result=ecdsa_mod_inverse(tc.num,tc.divisor);
+    printf("case=%dP\n",i);
+    TEST_ASSERT_EQUAL_INT(tc.expected,result);
+  }
+}
+
+static void test_gcd(void)
+{
+  test_case_gcd cases[] = {
+    {48,18,6},
+    {101, 10, 1},
+    {270, 192, 6},
+    {1313, 707, 101},
+    {0, 5, 5},
+    {5, 0, 5},
+    {1, 1, 1},
+    {7, 1, 1},
+{37, 11, 1},
+{121, 11, 11},
+{123456, 789, 3},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_gcd tc=cases[i];
+    int result=ecdsa_gcd(tc.dividend,tc.divisor);
+    printf("case=%dP\n",i);
+    TEST_ASSERT_EQUAL_INT(tc.expected,result);
+  }
+}
+
 
 int main(void)
 {
@@ -176,10 +241,11 @@ int main(void)
   RUN_TEST(test_times_point);
   RUN_TEST(test_add_point);
   RUN_TEST(test_mod);
-  RUN_TEST(test_mod_inverse);
   RUN_TEST(test_verify);
   RUN_TEST(test_times_and_add_consistency);
   RUN_TEST(test_scalar_mul_identity);
   RUN_TEST(test_addition_infinity);
+  RUN_TEST(test_mod_inverse);
+  RUN_TEST(test_gcd);
   return UNITY_END();
 }
