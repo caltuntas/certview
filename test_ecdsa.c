@@ -32,6 +32,14 @@ typedef struct {
   int expected;
 } test_case_gcd;
 
+typedef struct {
+  int a;
+  int b;
+  int g;
+  int x;
+  int y;
+} test_case_xgcd;
+
 static void test_times_point(void)
 {
   ecdsa_params_t params={
@@ -221,9 +229,9 @@ static void test_gcd(void)
     {5, 0, 5},
     {1, 1, 1},
     {7, 1, 1},
-{37, 11, 1},
-{121, 11, 11},
-{123456, 789, 3},
+    {37, 11, 1},
+    {121, 11, 11},
+    {123456, 789, 3},
   };
   size_t len = ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
@@ -231,6 +239,31 @@ static void test_gcd(void)
     int result=ecdsa_gcd(tc.dividend,tc.divisor);
     printf("case=%dP\n",i);
     TEST_ASSERT_EQUAL_INT(tc.expected,result);
+  }
+}
+
+
+static void test_xgcd(void)
+{
+  test_case_xgcd cases[] = {
+    {252,198,18,4,-5},
+    {30,20,10,1,-1},
+    {35, 15 ,5, 1, -2},
+    {101, 23,1, -5, 22},
+    {17, 31,1, 11, -6},
+    {20, 30,10, -1, 1},
+    {7, 13,1, 2, -1},
+    {3, 11,1, 4, -1},
+    {19, 121,1, 51, -8},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_xgcd tc=cases[i];
+    xgcd_result_t result=ecdsa_xgcd(tc.a,tc.b);
+    printf("case=%dP\n",i);
+    TEST_ASSERT_EQUAL_INT(tc.g,result.g);
+    TEST_ASSERT_EQUAL_INT(tc.x,result.x);
+    TEST_ASSERT_EQUAL_INT(tc.y,result.y);
   }
 }
 
@@ -247,5 +280,6 @@ int main(void)
   RUN_TEST(test_addition_infinity);
   RUN_TEST(test_mod_inverse);
   RUN_TEST(test_gcd);
+  RUN_TEST(test_xgcd);
   return UNITY_END();
 }

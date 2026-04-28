@@ -25,6 +25,49 @@ int ecdsa_gcd(int dividend, int divisor)
   return cur_divisor;
 }
 
+xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
+{
+  int xi,xi1,xi2;
+  int yi,yi1,yi2;
+  int qi2;
+  int q;
+  int g;
+  int step=0;
+  int i=0;
+  xgcd_result_t result;
+  int cur_dividend=dividend, cur_divisor=divisor,r;
+  while(cur_divisor!=0) {
+    r=cur_dividend % cur_divisor;
+    if(r==0)
+      g=cur_divisor;
+    if(step==0) {
+      xi=1;
+      yi=0;
+    }else if(step==1) {
+      xi=0;
+      yi=1;
+    }else {
+      xi=xi2-qi2*xi1;
+      yi=yi2-qi2*yi1;
+    }
+    qi2=q;
+    q=cur_dividend / cur_divisor;
+    cur_dividend=cur_divisor;
+    cur_divisor=r;
+    step++;
+    xi2=xi1;
+    yi2=yi1;
+    xi1=xi;
+    yi1=yi;
+  } 
+  xi=xi2-qi2*xi1;
+  yi=yi2-qi2*yi1;
+  result.g=g;
+  result.x=xi;
+  result.y=yi;
+  return result;
+}
+
 int ecdsa_mod_inverse(int num, unsigned int divisor) 
 {
 	int res=0,counter=0;
