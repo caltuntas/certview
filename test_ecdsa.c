@@ -255,6 +255,8 @@ static void test_xgcd(void)
     {7, 13,1, 2, -1},
     {3, 11,1, 4, -1},
     {19, 121,1, 51, -8},
+    {10, 5,5, 0, 1},
+    {5, 10,5, 1, 0},
   };
   size_t len = ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
