@@ -32,6 +32,8 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
   int qi2=0;
   int q=0;
   int g=0;
+  if(divisor==0)
+    g=dividend;
   int step=0;
   int i=0;
   xgcd_result_t result;
@@ -69,6 +71,11 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
   }else {
     xi=xi2-qi2*xi1;
     yi=yi2-qi2*yi1;
+  }
+  if(g<0){
+    g*=-1;
+    xi*=-1;
+    yi*=-1;
   }
   result.g=g;
   result.x=xi;
