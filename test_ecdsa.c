@@ -23,7 +23,6 @@ typedef struct {
   int num;
   int divisor;
   int expected;
-  bool has_inverse;
 } test_case_modinv;
 
 typedef struct {
@@ -149,22 +148,6 @@ static void test_mod(void)
   }
 }
 
-/*
-static void test_mod_inverse(void)
-{
-  int results[][3]={
-    {3,7,5},
-    {2,17,9},
-  };
-  size_t len = ARRAY_LEN(results);
-  for(int i=0; i<len; i++){
-    int *row=results[i];
-    int res=ecdsa_mod_inverse(row[0],row[1]);
-    TEST_ASSERT_EQUAL_INT(row[2],res);
-  }
-}
-*/
-
 static void test_scalar_mul_identity(void)
 {
   ecdsa_params_t params = {
@@ -193,21 +176,22 @@ static void test_addition_infinity(void)
 static void test_mod_inverse(void)
 {
   test_case_modinv cases[] = {
-    {3,17,6,true},
-    {5,17,7,true},
-    {8,19,12,true},
-
-    /*
-    {6,18,0,false},
-    {4,16,0,false},
-    {0,17,0,false},
-
-    {-3,17,11,true},
-    {-5,17,10,true},
-
-    {17,17,0,false},
-    {1,17,1,true},
-    */
+    {3,17,6},
+    {5,17,7},
+    {8,19,12},
+    {3,7,5},
+    {2,17,9},
+    {3,11,4},
+    {-3,11,7},
+    {123456789,1000000007,18633540},
+    {6,15,0},
+    {6,18,0},
+    {4,16,0},
+    {0,17,0},
+    {-3,17,11},
+    {-5,17,10},
+    {17,17,0},
+    {1,17,1},
   };
   size_t len = ARRAY_LEN(cases);
   for(int i=0; i<len; i++){

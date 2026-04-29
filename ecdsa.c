@@ -83,15 +83,17 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
   return result;
 }
 
+//TODO:revisit error handling later, 0 might be a valid result mathematically
+/*
+ * returns 0 for no inverse case
+ */
 int ecdsa_mod_inverse(int num, unsigned int divisor) 
 {
-	int res=0,counter=0;
-  if (num==0)
+  xgcd_result_t result=ecdsa_xgcd(num,divisor);
+  if(result.g!=1)
     return 0;
-	while(res!=1) {
-		res=(num * ++counter) % divisor;
-	}
-	return counter;
+  int mod=ecdsa_mod(result.x,divisor);
+	return mod;
 }
 
 //https://sefiks.com/2016/03/13/the-math-behind-elliptic-curve-cryptography/
