@@ -116,19 +116,19 @@ static void test_times_and_add_consistency(void)
   TEST_ASSERT_EQUAL(p8.y, sum.y);
 }
 
-static void test_verify(void)
+static void test_signature_verify(void)
 {
   ecdsa_params_t params={
     .p=17,
     .a=2,
     .b=2,
     .n=19,
-    .z=11,
+    .g={5,1},
   };
-  ecdsa_point_t p1={10,8};
-  ecdsa_point_t g={5,1};
+  int z=11;
+  ecdsa_signature_t sig={10,8};
   ecdsa_point_t q={0,6};
-  bool valid=ecdsa_verify(params,p1,g,q);
+  bool valid=ecdsa_signature_verify(params,sig,z,q);
   TEST_ASSERT_TRUE(valid);
 }
 
@@ -268,7 +268,7 @@ int main(void)
   RUN_TEST(test_times_point);
   RUN_TEST(test_add_point);
   RUN_TEST(test_mod);
-  RUN_TEST(test_verify);
+  RUN_TEST(test_signature_verify);
   RUN_TEST(test_times_and_add_consistency);
   RUN_TEST(test_scalar_mul_identity);
   RUN_TEST(test_addition_infinity);

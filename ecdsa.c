@@ -137,13 +137,13 @@ ecdsa_point_t ecdsa_point_add(ecdsa_params_t params, ecdsa_point_t p1, ecdsa_poi
 	return result;
 }
 
-bool ecdsa_verify(ecdsa_params_t params, ecdsa_point_t p1,ecdsa_point_t g,ecdsa_point_t q)
+bool ecdsa_signature_verify(ecdsa_params_t params, ecdsa_signature_t sig,int z,ecdsa_point_t q)
 {
-	int w = ecdsa_mod_inverse(p1.y,params.n);
-	int u1=ecdsa_mod(params.z*w,params.n);
-	int u2=ecdsa_mod(p1.x*w,params.n);
-	ecdsa_point_t tmp1=ecdsa_point_times(params,u1,g);
+	int w = ecdsa_mod_inverse(sig.s,params.n);
+	int u1=ecdsa_mod(z*w,params.n);
+	int u2=ecdsa_mod(sig.r*w,params.n);
+	ecdsa_point_t tmp1=ecdsa_point_times(params,u1,params.g);
 	ecdsa_point_t tmp2=ecdsa_point_times(params,u2,q);
 	ecdsa_point_t p=ecdsa_point_add(params,tmp1,tmp2);
-	return p.x==p1.x;
+	return ecdsa_mod(p.x,params.n)==sig.r;
 }
