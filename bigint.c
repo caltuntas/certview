@@ -629,3 +629,22 @@ bigint_t *mod_bigint(bigint_t *num1, bigint_t *num2)
   }
   return remainder;
 }
+
+bigint_t *gcd_bigint(bigint_t *dividend, bigint_t *divisor) 
+{
+  if(bigint_is_zero(divisor))
+    return dividend;
+  if(bigint_is_zero(dividend))
+    return divisor;
+  bigint_t *cur_dividend=dividend;
+  bigint_t *cur_divisor=divisor;
+  bigint_t *remainder=NULL;
+  bigint_t *quotient =div_bigint(cur_dividend,cur_divisor,&remainder);
+  while(bigint_is_zero(remainder)==false) {
+    cur_dividend=cur_divisor;
+    cur_divisor=remainder;
+    quotient =div_bigint(cur_dividend,cur_divisor,&remainder);
+  } 
+  return cur_divisor;
+}
+

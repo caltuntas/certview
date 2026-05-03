@@ -60,6 +60,12 @@ typedef struct {
   int result;
 } test_case_compare_bigint;
 
+typedef struct {
+  bigint_t dividend;
+  bigint_t divisor;
+  bigint_t expected;
+} test_case_gcd;
+
 void print_data(uint8_t *data,size_t len)
 {
   for (int i=0;i<len; i++) {
@@ -493,6 +499,10 @@ static void test_mod_bigint(void)
     { BIGINT(1, 0xAB,0xCD), BIGINT(1, 0x01,0x00), BIGINT(1, 0xCD) }, // mod 256
     { BIGINT(1, 0xFF,0xFF,0xFF,0xFF), BIGINT(1, 0xFF,0xFF), BIGINT(1, 0x00) },
     { BIGINT(1, 0x01,0x00,0x00), BIGINT(1, 0xFF,0xFF), BIGINT(1, 0x01) },
+    { BIGINT(1, 3), BIGINT(1, 17), BIGINT(1, 3) },
+    { BIGINT(1, 18), BIGINT(1, 17), BIGINT(1, 1) },
+    { BIGINT(NEGATIVE, 1), BIGINT(1, 17), BIGINT(1, 16) },
+    { BIGINT(NEGATIVE, 20), BIGINT(1, 17), BIGINT(1, 14) },
   };
   size_t len=ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
@@ -506,6 +516,32 @@ static void test_mod_bigint(void)
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
   }
 }
+
+static void test_gcd(void)
+{
+  test_case_gcd cases[] = {
+    {BIGINT(1,48),BIGINT(1,18),BIGINT(1,6)},
+    {BIGINT(1,101), BIGINT(1,10), BIGINT(1,1)},
+    {BIGINT(1,0), BIGINT(1,5), BIGINT(1,5)},
+    {BIGINT(1,5), BIGINT(1,0), BIGINT(1,5)},
+    {BIGINT(1,1), BIGINT(1,1), BIGINT(1,1)},
+    {BIGINT(1,7), BIGINT(1,1), BIGINT(1,1)},
+    {BIGINT(1,37), BIGINT(1,11), BIGINT(1,1)},
+    {BIGINT(1,121), BIGINT(1,11), BIGINT(1,11)},
+    {BIGINT(1,0x01,0x0E), BIGINT(1,0xC0), BIGINT(1,6)},
+    {BIGINT(NON_NEGATIVE,0x05,0x21), BIGINT(NON_NEGATIVE,0x02,0xc3), BIGINT(NON_NEGATIVE,0x65)},
+    {BIGINT(NON_NEGATIVE,0x01,0xe2,0x40), BIGINT(NON_NEGATIVE,0x03,0x15), BIGINT(NON_NEGATIVE,0x3)},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_gcd tc=cases[i];
+    bigint_t *result=gcd_bigint(&tc.dividend,&tc.divisor);
+    printf("case=%dP\n",i);
+    TEST_ASSERT_EQUAL_INT(tc.expected.length,result->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.expected.data,result->data,tc.expected.length);
+  }
+}
+
 
 
 int main(void)
@@ -522,5 +558,6 @@ int main(void)
 	RUN_TEST(test_shift_left_bigint);
 	RUN_TEST(test_shift_right_bigint);
 	RUN_TEST(test_mod_bigint);
+	RUN_TEST(test_gcd);
   return UNITY_END();
 }

@@ -132,22 +132,6 @@ static void test_signature_verify(void)
   TEST_ASSERT_TRUE(valid);
 }
 
-static void test_mod(void)
-{
-  int results[][3]={
-    {3,17,3},
-    {18,17,1},
-    {-1,17,16},
-    {-20,17,14},
-  };
-  size_t len = ARRAY_LEN(results);
-  for(int i=0; i<len; i++){
-    int *row=results[i];
-    int res=ecdsa_mod(row[0],row[1]);
-    TEST_ASSERT_EQUAL_INT(row[2],res);
-  }
-}
-
 static void test_scalar_mul_identity(void)
 {
   ecdsa_params_t params = {
@@ -267,7 +251,6 @@ int main(void)
   UNITY_BEGIN();
   RUN_TEST(test_times_point);
   RUN_TEST(test_add_point);
-  RUN_TEST(test_mod);
   RUN_TEST(test_signature_verify);
   RUN_TEST(test_times_and_add_consistency);
   RUN_TEST(test_scalar_mul_identity);
