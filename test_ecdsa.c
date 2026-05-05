@@ -186,31 +186,6 @@ static void test_mod_inverse(void)
   }
 }
 
-static void test_gcd(void)
-{
-  test_case_gcd cases[] = {
-    {48,18,6},
-    {101, 10, 1},
-    {270, 192, 6},
-    {1313, 707, 101},
-    {0, 5, 5},
-    {5, 0, 5},
-    {1, 1, 1},
-    {7, 1, 1},
-    {37, 11, 1},
-    {121, 11, 11},
-    {123456, 789, 3},
-  };
-  size_t len = ARRAY_LEN(cases);
-  for(int i=0; i<len; i++){
-    test_case_gcd tc=cases[i];
-    int result=ecdsa_gcd(tc.dividend,tc.divisor);
-    printf("case=%dP\n",i);
-    TEST_ASSERT_EQUAL_INT(tc.expected,result);
-  }
-}
-
-
 static void test_xgcd(void)
 {
   test_case_xgcd cases[] = {
@@ -256,7 +231,6 @@ int main(void)
   RUN_TEST(test_scalar_mul_identity);
   RUN_TEST(test_addition_infinity);
   RUN_TEST(test_mod_inverse);
-  RUN_TEST(test_gcd);
   RUN_TEST(test_xgcd);
   return UNITY_END();
 }

@@ -648,3 +648,89 @@ bigint_t *gcd_bigint(bigint_t *dividend, bigint_t *divisor)
   return cur_divisor;
 }
 
+xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
+{
+  bigint_t *xi=NULL;
+  bigint_t *xi1=NULL;
+  bigint_t *xi2=NULL;
+  bigint_t *yi=NULL;
+  bigint_t *yi1=NULL;
+  bigint_t *yi2=NULL;
+  bigint_t *qi2=NULL;
+  bigint_t *q=NULL;
+  bigint_t *g=NULL;
+  if(bigint_is_zero(divisor))
+    g=dividend;
+  int step=0;
+  int i=0;
+  xgcd_result_t result;
+  bigint_t *cur_dividend=dividend;
+  bigint_t *cur_divisor=divisor;
+  bigint_t *r;
+  while(bigint_is_zero(cur_divisor)==false) {
+    bigint_t *qtmp=div_bigint(cur_dividend,cur_divisor,&r);
+    char *qstr=bigint_to_decimal_str(qtmp);
+    char *rstr=bigint_to_decimal_str(r);
+    printf("q=%s,r=%s\n",qstr,rstr);
+    //r=cur_dividend % cur_divisor;
+    if(bigint_is_zero(r))
+      g=cur_divisor;
+    if(step==0) {
+      //xi=1
+      xi=create_bigint((uint8_t[]){0,1},2);
+      //yi=0
+      yi=create_bigint((uint8_t[]){0},1);
+    }else if(step==1) {
+      //xi=0
+      xi=create_bigint((uint8_t[]){0},1);
+      //yi=1
+      yi=create_bigint((uint8_t[]){0,1},2);
+    }else {
+      //xi=xi2-qi2*xi1;
+      //yi=yi2-qi2*yi1;
+      xi=sub_bigint(xi2,mul_bigint(qi2,xi1));
+      yi=sub_bigint(yi2,mul_bigint(qi2,yi1));
+    }
+    qi2=q;
+    q=qtmp;
+    cur_dividend=cur_divisor;
+    cur_divisor=r;
+    step++;
+    xi2=xi1;
+    yi2=yi1;
+    xi1=xi;
+    yi1=yi;
+  } 
+  if(step==0) {
+    //xi=1
+    xi=create_bigint((uint8_t[]){0,1},2);
+    //yi=0
+    yi=create_bigint((uint8_t[]){0},1);
+  }else if(step==1) {
+    //xi=0
+    xi=create_bigint((uint8_t[]){0},1);
+    //yi=1
+    yi=create_bigint((uint8_t[]){0,1},2);
+  }else {
+    //xi=xi2-qi2*xi1;
+    //yi=yi2-qi2*yi1;
+    xi=sub_bigint(xi2,mul_bigint(qi2,xi1));
+    yi=sub_bigint(yi2,mul_bigint(qi2,yi1));
+  }
+  if(g<0){
+    //g*=-1;
+    //xi*=-1;
+    //yi*=-1;
+    uint8_t arr[]={0,-1};
+    bigint_t *minus1=create_bigint(arr,2);
+    g=mul_bigint(g,minus1);
+    xi=mul_bigint(xi,minus1);
+    yi=mul_bigint(yi,minus1);
+  }
+  result.g=g;
+  result.x=xi;
+  result.y=yi;
+  return result;
+}
+
+

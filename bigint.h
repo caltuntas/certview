@@ -15,6 +15,12 @@ typedef struct bigint_t {
 	size_t length;
 } bigint_t;
 
+typedef struct xgcd_result_t {
+  bigint_t *g;
+	bigint_t *x;
+	bigint_t *y;
+} xgcd_result_t;
+
 void bigint_ltrim(bigint_t *bi,uint8_t val);
 bigint_t *create_bigint(uint8_t *buf,size_t len);
 bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2);
@@ -26,6 +32,7 @@ bigint_t *shift_right_bigint(bigint_t *num1,int bits);
 bigint_t *mod_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *bigint_from_decimal_str(char *decimal);
 bigint_t *gcd_bigint(bigint_t *dividend, bigint_t *divisor) ;
+xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor) ;
 char *bigint_to_decimal_str(bigint_t *num);
 int compare_bigint(bigint_t *num1, bigint_t *num2);
 

@@ -66,6 +66,15 @@ typedef struct {
   bigint_t expected;
 } test_case_gcd;
 
+typedef struct {
+  bigint_t a;
+  bigint_t b;
+  bigint_t g;
+  bigint_t x;
+  bigint_t y;
+} test_case_xgcd;
+
+
 void print_data(uint8_t *data,size_t len)
 {
   for (int i=0;i<len; i++) {
@@ -530,7 +539,7 @@ static void test_gcd(void)
     {BIGINT(1,121), BIGINT(1,11), BIGINT(1,11)},
     {BIGINT(1,0x01,0x0E), BIGINT(1,0xC0), BIGINT(1,6)},
     {BIGINT(NON_NEGATIVE,0x05,0x21), BIGINT(NON_NEGATIVE,0x02,0xc3), BIGINT(NON_NEGATIVE,0x65)},
-    {BIGINT(NON_NEGATIVE,0x01,0xe2,0x40), BIGINT(NON_NEGATIVE,0x03,0x15), BIGINT(NON_NEGATIVE,0x3)},
+    {BIGINT(NON_NEGATIVE,0X01,0XE2,0X40), BIGINT(NON_NEGATIVE,0X03,0X15), BIGINT(NON_NEGATIVE,0X3)},
   };
   size_t len = ARRAY_LEN(cases);
   for(int i=0; i<len; i++){
@@ -542,6 +551,42 @@ static void test_gcd(void)
   }
 }
 
+static void test_xgcd(void)
+{
+  test_case_xgcd cases[] = {
+    {BIGINT(1,252),BIGINT(1,198),BIGINT(1,18),BIGINT(1,4),BIGINT(NEGATIVE,5)},
+    {BIGINT(1,30),BIGINT(1,20),BIGINT(1,10),BIGINT(1,1),BIGINT(NEGATIVE,1)},
+    {BIGINT(1,35), BIGINT(1,15) ,BIGINT(1,5), BIGINT(1,1), BIGINT(NEGATIVE,2)},
+    {BIGINT(1,101), BIGINT(1,23),BIGINT(1,1), BIGINT(NEGATIVE,5), BIGINT(1,22)},
+    {BIGINT(1,17), BIGINT(1,31),BIGINT(1,1), BIGINT(1,11), BIGINT(NEGATIVE,6)},
+    {BIGINT(1,20), BIGINT(1,30),BIGINT(1,10), BIGINT(NEGATIVE,1), BIGINT(1,1)},
+    {BIGINT(1,7), BIGINT(1,13),BIGINT(1,1), BIGINT(1,2), BIGINT(NEGATIVE,1)},
+    {BIGINT(1,3), BIGINT(1,11),BIGINT(1,1), BIGINT(1,4), BIGINT(NEGATIVE,1)},
+    {BIGINT(1,19), BIGINT(1,121),BIGINT(1,1), BIGINT(1,51), BIGINT(NEGATIVE,8)},
+    {BIGINT(1,10), BIGINT(1,5),BIGINT(1,5), BIGINT(1,0), BIGINT(1,1)},
+    {BIGINT(1,5), BIGINT(1,10),BIGINT(1,5), BIGINT(1,1), BIGINT(1,0)},
+    {BIGINT(1,0), BIGINT(1,5),BIGINT(1,5), BIGINT(1,0), BIGINT(1,1)},
+    {BIGINT(1,5), BIGINT(1,0),BIGINT(1,5), BIGINT(1,1), BIGINT(1,0)},
+    {BIGINT(NEGATIVE,30), BIGINT(1,20),BIGINT(1,10), BIGINT(NEGATIVE,1), BIGINT(NEGATIVE,1)},
+    {BIGINT(1,30), BIGINT(NEGATIVE,20),BIGINT(1,10), BIGINT(1,1), BIGINT(1,1)},
+    {BIGINT(NEGATIVE,30), BIGINT(NEGATIVE,20),BIGINT(1,10), BIGINT(NEGATIVE,1), BIGINT(1,1)},
+    {BIGINT(1,240), BIGINT(1,46),BIGINT(1,2), BIGINT(NEGATIVE,9), BIGINT(1,47)},
+    {BIGINT(1,0x10,0x00), BIGINT(1,0x04,0x00),BIGINT(1,0x04,0x00), BIGINT(1,0), BIGINT(1,1)},
+    {BIGINT(1,0x01,0xE2,0x40), BIGINT(1,0x1E,0xD2),BIGINT(1,6), BIGINT(NEGATIVE,0x02,0x89), BIGINT(1,0x27,0xAB)},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_xgcd tc=cases[i];
+    xgcd_result_t result=xgcd_bigint(&tc.a,&tc.b);
+    printf("case=%dP\n",i);
+    TEST_ASSERT_EQUAL_INT(tc.g.length,result.g->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.g.data,result.g->data,tc.g.length);
+    TEST_ASSERT_EQUAL_INT(tc.x.length,result.x->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.x.data,result.x->data,tc.x.length);
+    TEST_ASSERT_EQUAL_INT(tc.y.length,result.y->length);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.y.data,result.y->data,tc.y.length);
+  }
+}
 
 
 int main(void)
@@ -559,5 +604,6 @@ int main(void)
 	RUN_TEST(test_shift_right_bigint);
 	RUN_TEST(test_mod_bigint);
 	RUN_TEST(test_gcd);
+	RUN_TEST(test_xgcd);
   return UNITY_END();
 }
