@@ -74,6 +74,12 @@ typedef struct {
   bigint_t y;
 } test_case_xgcd;
 
+typedef struct {
+  bigint_t num;
+  bigint_t divisor;
+  bigint_t expected;
+} test_case_modinv;
+
 
 void print_data(uint8_t *data,size_t len)
 {
@@ -112,6 +118,7 @@ static void test_mul_bigint(void)
     char *strres =bigint_to_decimal_str(result);
     printf("%sx%s=%s\n",strnum1,strnum2,strres);
     TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
+    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
   }
 }
@@ -354,6 +361,8 @@ static void test_compare_bigint(void)
 static void test_div_bigint(void)
 {
   test_case_bigint_division cases[] = {
+		{ BIGINT(1,0x07,0x5B,0xCD,0x15),BIGINT(1,0xBC,0x61,0x5F), BIGINT(1,9), BIGINT(1,0xBC,0x60,0xBE)},
+		{ BIGINT(1,0x07,0x5B,0xCD,0x15),BIGINT(1,0x3B,0x9A,0xCA,0x07),BIGINT(1,0),BIGINT(1,0x07,0x5B,0xCD,0x15)},
     { BIGINT(NON_NEGATIVE,0xAA,0x12,0xFE,0x01),BIGINT(1,0x0F,0xAB),BIGINT(1,0x0A,0xDA,0xDA),BIGINT(1,0x08,0x63) },
     { BIGINT(1,0x12,0x34,0x56),BIGINT(1,0x01),BIGINT(1,0x12,0x34,0x56),BIGINT(1,0x00) },
     { BIGINT(1,0xFF,0xFF,0xFF),BIGINT(1,0xFF),BIGINT(1,0x01,0x01,0x01),BIGINT(1,0x00) },
@@ -416,7 +425,8 @@ static void test_div_bigint(void)
     char *dividend_str =bigint_to_decimal_str(&tc.dividend);
     char *divisor_str =bigint_to_decimal_str(&tc.divisor);
     char *quotient_str =bigint_to_decimal_str(quotient);
-    printf("case=%d %s÷%s=%s\n",i,dividend_str,divisor_str,quotient_str);
+    char *remainder_str =bigint_to_decimal_str(remainder);
+    printf("case=%d %s÷%s=%s, remainder=%s\n",i,dividend_str,divisor_str,quotient_str,remainder_str);
     TEST_ASSERT_EQUAL_INT(tc.quotient.sign,quotient->sign);
     TEST_ASSERT_EQUAL_INT(tc.quotient.length,quotient->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.quotient.data,quotient->data,tc.quotient.length);
@@ -523,6 +533,7 @@ static void test_mod_bigint(void)
     printf("%sx%s=%s\n",strnum1,strnum2,strres);
     TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
   }
 }
 
@@ -554,6 +565,7 @@ static void test_gcd(void)
 static void test_xgcd(void)
 {
   test_case_xgcd cases[] = {
+		{BIGINT(1,0x07,0x5B,0xCD,0x15),BIGINT(1,0x3B,0x9A,0xCA,0x07), BIGINT(1,1),BIGINT(1,0x01,0x1C,0x53,0x44), BIGINT(NEGATIVE,0x23,0x1A,0x15) },
     {BIGINT(1,252),BIGINT(1,198),BIGINT(1,18),BIGINT(1,4),BIGINT(NEGATIVE,5)},
     {BIGINT(1,30),BIGINT(1,20),BIGINT(1,10),BIGINT(1,1),BIGINT(NEGATIVE,1)},
     {BIGINT(1,35), BIGINT(1,15) ,BIGINT(1,5), BIGINT(1,1), BIGINT(NEGATIVE,2)},
@@ -581,10 +593,49 @@ static void test_xgcd(void)
     printf("case=%dP\n",i);
     TEST_ASSERT_EQUAL_INT(tc.g.length,result.g->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.g.data,result.g->data,tc.g.length);
+    TEST_ASSERT_EQUAL_INT(result.g->sign,tc.g.sign);
+
     TEST_ASSERT_EQUAL_INT(tc.x.length,result.x->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.x.data,result.x->data,tc.x.length);
+    TEST_ASSERT_EQUAL_INT(result.x->sign,tc.x.sign);
+
     TEST_ASSERT_EQUAL_INT(tc.y.length,result.y->length);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.y.data,result.y->data,tc.y.length);
+    TEST_ASSERT_EQUAL_INT(result.y->sign,tc.y.sign);
+  }
+}
+
+static void test_mod_inverse(void)
+{
+  test_case_modinv cases[] = {
+    {BIGINT(0,3),BIGINT(1,17),BIGINT(1,6)},
+    {BIGINT(1,5),BIGINT(1,17),BIGINT(1,7)},
+    {BIGINT(1,8),BIGINT(1,19),BIGINT(1,12)},
+    {BIGINT(1,3),BIGINT(1,7),BIGINT(1,5)},
+    {BIGINT(1,2),BIGINT(1,17),BIGINT(1,9)},
+    {BIGINT(1,3),BIGINT(1,11),BIGINT(1,4)},
+    {BIGINT(1,6),BIGINT(1,15),BIGINT(0,0)},
+    {BIGINT(1,6),BIGINT(1,18),BIGINT(0,0)},
+    {BIGINT(1,4),BIGINT(1,16),BIGINT(0,0)},
+    {BIGINT(1,0),BIGINT(1,17),BIGINT(0,0)},
+    {BIGINT(1,17),BIGINT(1,17),BIGINT(0,0)},
+    {BIGINT(1,1),BIGINT(1,17),BIGINT(1,1)},
+    {BIGINT(NEGATIVE,3),BIGINT(1,11),BIGINT(1,7)},
+    {BIGINT(NEGATIVE,3),BIGINT(1,17),BIGINT(1,11)},
+    {BIGINT(NEGATIVE,5),BIGINT(1,17),BIGINT(1,10)},
+    {BIGINT(1,0x07,0x5B,0xCD,0x15),BIGINT(1,0x3B,0x9A,0xCA,0x07),BIGINT(1,0x01,0x1C,0x53,0x44)},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_modinv tc=cases[i];
+    bigint_t *result=mod_inverse(&tc.num,&tc.divisor);
+    printf("case=%dP\n",i);
+		if(tc.expected.sign!=0) {
+			TEST_ASSERT_EQUAL_INT(tc.expected.length,result->length);
+			TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.expected.data,result->data,tc.expected.length);
+		}else {
+			TEST_ASSERT_NULL(result);
+		}
   }
 }
 
@@ -605,5 +656,6 @@ int main(void)
 	RUN_TEST(test_mod_bigint);
 	RUN_TEST(test_gcd);
 	RUN_TEST(test_xgcd);
+	RUN_TEST(test_mod_inverse);
   return UNITY_END();
 }

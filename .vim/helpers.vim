@@ -16,3 +16,6 @@ function! g:ReplaceCurrentDecimalWithByteArray()
   normal! ciw
   execute "normal! a" . byte_array
 endfunction
+
+"'<,'>v/\<test_div_bigint\>\|UNIT/norm I//
+"'<,'>g/\/\/RUN/norm _xx

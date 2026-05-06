@@ -5,6 +5,13 @@
 #include <stdbool.h>
 #include "bigint.h"
 
+void print_bigint(bigint_t *n)
+{
+  for(int i=0; i<n->length; i++){
+    printf("%02X,",n->data[i]);
+  }
+  printf("\n");
+}
 bool bigint_is_zero(bigint_t *num)
 {
   if(num!=NULL && num->length==1 && num->data[0]==0)
@@ -155,6 +162,7 @@ bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2)
     bi->length=0;
     counter++;
   }
+  total->sign = num1->sign * num2->sign;
   return total;
 }
 
@@ -191,6 +199,8 @@ static bool is_empty(uint8_t *buf,size_t len)
 //https://en.wikipedia.org/wiki/Long_division
 char *bigint_to_decimal_str(bigint_t *num)
 {
+  if(num==NULL)
+    return 0;
   int obase=10;
   int ibase=256;
   char *ibase_str="16";
@@ -516,20 +526,37 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 
     uint8_t arr[]={0,q};
     bigint_t *qbi=create_bigint(arr,2);
+    qbi->sign=NON_NEGATIVE;
     bigint_t *mulres=mul_bigint(qbi,v);
+    mulres->sign=NON_NEGATIVE;
 
     bigint_t *Uslice=malloc(sizeof(*Uslice));
+    Uslice->sign=NON_NEGATIVE;
     Uslice->length=len_divisor+1;
     uint8_t *slicebuf=calloc(Uslice->length,sizeof(*slicebuf));
     memcpy(slicebuf,u->data+j,Uslice->length);
     Uslice->data=slicebuf;
 
     bigint_t *subres=sub_bigint(Uslice,mulres);
+    printf("Uslice=");
+    print_bigint(Uslice);
+    printf("q*V=");
+    print_bigint(mulres);
+    printf("Uslice-q*V=");
+    print_bigint(subres);
+    if(subres->sign==NEGATIVE){
+      q--;
+      subres=add_bigint(subres,v);
+    }
 
     uint8_t *buf=calloc(Uslice->length,sizeof(*slicebuf));
     int diff=Uslice->length-subres->length;
     memcpy(buf+diff, subres->data, subres->length);
     memcpy(u->data + j, buf,Uslice->length);
+    printf("current U=");
+    print_bigint(u);
+    printf("current V=");
+    print_bigint(v);
 
     printf("q[%d]=%d\n",j,q);
     res[j]=q;
@@ -539,6 +566,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
   for(int i=0; i<target_len; i++){
     printf("%02X,",u->data[i]);
   }
+  printf("\n");
 
   if(remainder!=NULL) {
     bigint_t *r=malloc(sizeof(*r));
@@ -668,23 +696,30 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
   bigint_t *cur_divisor=divisor;
   bigint_t *r;
   while(bigint_is_zero(cur_divisor)==false) {
+    printf("loop xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
     bigint_t *qtmp=div_bigint(cur_dividend,cur_divisor,&r);
     char *qstr=bigint_to_decimal_str(qtmp);
     char *rstr=bigint_to_decimal_str(r);
-    printf("q=%s,r=%s\n",qstr,rstr);
+    char *dividend_str=bigint_to_decimal_str(cur_dividend);
+    char *divisor_str=bigint_to_decimal_str(cur_divisor);
+    printf("dividend=%s,divisor=%s,q=%s,r=%s\n",dividend_str,divisor_str,qstr,rstr);
     //r=cur_dividend % cur_divisor;
     if(bigint_is_zero(r))
       g=cur_divisor;
     if(step==0) {
       //xi=1
       xi=create_bigint((uint8_t[]){0,1},2);
+      xi->sign=NON_NEGATIVE;
       //yi=0
       yi=create_bigint((uint8_t[]){0},1);
+      yi->sign=NON_NEGATIVE;
     }else if(step==1) {
       //xi=0
       xi=create_bigint((uint8_t[]){0},1);
+      xi->sign=NON_NEGATIVE;
       //yi=1
       yi=create_bigint((uint8_t[]){0,1},2);
+      yi->sign=NON_NEGATIVE;
     }else {
       //xi=xi2-qi2*xi1;
       //yi=yi2-qi2*yi1;
@@ -704,28 +739,28 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
   if(step==0) {
     //xi=1
     xi=create_bigint((uint8_t[]){0,1},2);
+    xi->sign=NON_NEGATIVE;
     //yi=0
     yi=create_bigint((uint8_t[]){0},1);
+    yi->sign=NON_NEGATIVE;
   }else if(step==1) {
     //xi=0
     xi=create_bigint((uint8_t[]){0},1);
+    xi->sign=NON_NEGATIVE;
     //yi=1
     yi=create_bigint((uint8_t[]){0,1},2);
+    yi->sign=NON_NEGATIVE;
   }else {
     //xi=xi2-qi2*xi1;
     //yi=yi2-qi2*yi1;
     xi=sub_bigint(xi2,mul_bigint(qi2,xi1));
     yi=sub_bigint(yi2,mul_bigint(qi2,yi1));
   }
-  if(g<0){
-    //g*=-1;
-    //xi*=-1;
-    //yi*=-1;
-    uint8_t arr[]={0,-1};
-    bigint_t *minus1=create_bigint(arr,2);
-    g=mul_bigint(g,minus1);
-    xi=mul_bigint(xi,minus1);
-    yi=mul_bigint(yi,minus1);
+  printf("outside xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
+  if(g->sign==NEGATIVE){
+    g->sign=NON_NEGATIVE;
+    xi->sign*=-1;
+    yi->sign*=-1;
   }
   result.g=g;
   result.x=xi;
@@ -733,4 +768,17 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
   return result;
 }
 
+
+//TODO:revisit error handling later, 0 might be a valid result mathematically
+/*
+ * returns 0 for no inverse case
+ */
+bigint_t *mod_inverse(bigint_t *num, bigint_t *divisor) 
+{
+  xgcd_result_t result=xgcd_bigint(num,divisor);
+  if(result.g->length==1 && result.g->data[0]!=1)
+    return NULL;
+  bigint_t *mod=mod_bigint(result.x,divisor);
+  return mod;
+}
 

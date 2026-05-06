@@ -39,6 +39,7 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
   xgcd_result_t result;
   int cur_dividend=dividend, cur_divisor=divisor,r;
   while(cur_divisor!=0) {
+		printf("loop xi=%d,xi1=%d,xi2=%d,yi=%d,yi1=%d,yi2=%d\n",xi,xi1,xi2,yi,yi1,yi2);
     r=cur_dividend % cur_divisor;
     if(r==0)
       g=cur_divisor;
@@ -56,6 +57,7 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
     q=cur_dividend / cur_divisor;
     cur_dividend=cur_divisor;
     cur_divisor=r;
+		printf("loop dividend=%d,divisor=%d,q=%d,r=%d\n",cur_dividend,cur_divisor,q,r);
     step++;
     xi2=xi1;
     yi2=yi1;
@@ -72,6 +74,7 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
     xi=xi2-qi2*xi1;
     yi=yi2-qi2*yi1;
   }
+	printf("outside xi=%d,xi1=%d,xi2=%d,yi=%d,yi1=%d,yi2=%d\n",xi,xi1,xi2,yi,yi1,yi2);
   if(g<0){
     g*=-1;
     xi*=-1;

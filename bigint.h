@@ -33,6 +33,7 @@ bigint_t *mod_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *bigint_from_decimal_str(char *decimal);
 bigint_t *gcd_bigint(bigint_t *dividend, bigint_t *divisor) ;
 xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor) ;
+bigint_t *mod_inverse(bigint_t *num, bigint_t *divisor) ;
 char *bigint_to_decimal_str(bigint_t *num);
 int compare_bigint(bigint_t *num1, bigint_t *num2);
 

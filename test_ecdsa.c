@@ -186,9 +186,10 @@ static void test_mod_inverse(void)
   }
 }
 
-static void test_xgcd(void)
+static void test_ecdsa_xgcd(void)
 {
   test_case_xgcd cases[] = {
+		{123456789,1000000007, 1,18633540, -2300437 },
     {252,198,18,4,-5},
     {30,20,10,1,-1},
     {35, 15 ,5, 1, -2},
@@ -231,6 +232,6 @@ int main(void)
   RUN_TEST(test_scalar_mul_identity);
   RUN_TEST(test_addition_infinity);
   RUN_TEST(test_mod_inverse);
-  RUN_TEST(test_xgcd);
+  RUN_TEST(test_ecdsa_xgcd);
   return UNITY_END();
 }
