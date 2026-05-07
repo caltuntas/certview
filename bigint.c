@@ -19,6 +19,17 @@ bool bigint_is_zero(bigint_t *num)
   return false;
 }
 
+bigint_t *create_bigint_from_int(int num)
+{
+  bigint_t *bigint =malloc(sizeof(*bigint));
+  bigint->length=1;
+  bigint->data=malloc(sizeof(uint8_t)*bigint->length);
+  //TODO:check if can be assigned to uint8_t
+  bigint->data[0]=num;
+  bigint->sign=NON_NEGATIVE;
+  return bigint;
+}
+
 bigint_t *create_bigint(uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));

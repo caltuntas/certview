@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "ecdsa.h"
 
+/*
 int ecdsa_mod(int num, unsigned int divisor) 
 {
 	if(num>=0){
@@ -9,20 +10,6 @@ int ecdsa_mod(int num, unsigned int divisor)
 		int n=num+divisor;
 		return ecdsa_mod(n,divisor);
 	}
-}
-
-int ecdsa_gcd(int dividend, int divisor) 
-{
-  if(divisor==0)
-    return dividend;
-  if(dividend==0)
-    return divisor;
-  int cur_dividend=dividend, cur_divisor=divisor,res;
-  while((res=cur_dividend % cur_divisor)!=0) {
-    cur_dividend=cur_divisor;
-    cur_divisor=res;
-  } 
-  return cur_divisor;
 }
 
 xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
@@ -85,41 +72,43 @@ xgcd_result_t ecdsa_xgcd(int dividend, int divisor)
   result.y=yi;
   return result;
 }
-
-//TODO:revisit error handling later, 0 might be a valid result mathematically
-/*
- * returns 0 for no inverse case
- */
-int ecdsa_mod_inverse(int num, unsigned int divisor) 
-{
-  xgcd_result_t result=ecdsa_xgcd(num,divisor);
-  if(result.g!=1)
-    return 0;
-  int mod=ecdsa_mod(result.x,divisor);
-	return mod;
-}
+*/
 
 //https://sefiks.com/2016/03/13/the-math-behind-elliptic-curve-cryptography/
 ecdsa_point_t ecdsa_point_double(ecdsa_params_t params, ecdsa_point_t p)
 {
-	int slope=ecdsa_mod(3*p.x*p.x+params.a,params.p)*ecdsa_mod_inverse(2*p.y,params.p);
-	slope=ecdsa_mod(slope,params.p);
-	int x=ecdsa_mod(slope*slope-2*p.x,params.p);
-	int y=ecdsa_mod(slope*(p.x-x)-p.y,params.p);
+	bigint_t *three=create_bigint_from_int(3);
+	bigint_t *two=create_bigint_from_int(2);
+	bigint_t *px2=mul_bigint(p.x,p.x);
+	bigint_t *px2three=mul_bigint(three,px2);
+	bigint_t *px2threeplusa=add_bigint(px2three,params.a);
+	bigint_t *twomulpy=mul_bigint(two,p.y);
+
+	bigint_t *slope=mul_bigint(mod_bigint(px2threeplusa,params.p),mod_inverse(twomulpy,params.p));
+	slope=mod_bigint(slope,params.p);
+	bigint_t *slope2=mul_bigint(slope,slope);
+	bigint_t *twomulpx=mul_bigint(two,p.x);
+	bigint_t *x=mod_bigint(sub_bigint(slope2,twomulpx),params.p);
+	bigint_t *pxsubx=sub_bigint(p.x,x);
+	bigint_t *slopemulpxsubx=mul_bigint(slope,pxsubx);
+	bigint_t *y=mod_bigint(sub_bigint(slopemulpxsubx,p.y),params.p);
 	ecdsa_point_t result={x,y};
 	return result;
 }
 
-ecdsa_point_t ecdsa_point_times(ecdsa_params_t params, int times,ecdsa_point_t p)
+ecdsa_point_t ecdsa_point_times(ecdsa_params_t params, bigint_t *times,ecdsa_point_t p)
 {
 	ecdsa_point_t result={.is_infinity=true};
 	ecdsa_point_t current=p;
-  for(int i=0; i<sizeof(times)*8; i++){
-    bool is_bit_set=((times>>i)&1);
-    if(is_bit_set){
-      result = ecdsa_point_add(params,result,current);
-    }
-    current = ecdsa_point_double(params,current);
+  for(int i=times->length-1; i>=0; i--){
+		uint8_t byte=times->data[i];
+		for(int j=0; j<8;j++) {
+			bool is_bit_set=((byte>>j)&1);
+			if(is_bit_set){
+				result = ecdsa_point_add(params,result,current);
+			}
+			current = ecdsa_point_double(params,current);
+		}
   }
 	return result;
 }
@@ -130,23 +119,33 @@ ecdsa_point_t ecdsa_point_add(ecdsa_params_t params, ecdsa_point_t p1, ecdsa_poi
     return (ecdsa_point_t){p2.x,p2.y};
   if(p2.is_infinity)
     return (ecdsa_point_t){p1.x,p1.y};
-  if(p1.x==p2.x && p1.y!=p2.y)
+  if(compare_bigint(p1.x,p2.x)==0 && compare_bigint(p1.y,p2.y)!=0)
     return (ecdsa_point_t){.is_infinity=true};
-	int slope=ecdsa_mod(p2.y-p1.y,params.p)*ecdsa_mod_inverse(ecdsa_mod(p2.x-p1.x,params.p),params.p);
-	slope=ecdsa_mod(slope,params.p);
-	int x=ecdsa_mod(slope*slope-p1.x-p2.x,params.p);
-	int y=ecdsa_mod(slope*(p1.x-x)-p1.y,params.p);
+	bigint_t *ydiff=sub_bigint(p2.y,p1.y);
+	bigint_t *xdiff=sub_bigint(p2.x,p1.x);
+	bigint_t *modydiff=mod_bigint(ydiff,params.p);
+	bigint_t *modxdiff=mod_bigint(xdiff,params.p);
+	bigint_t *slope=mul_bigint(modydiff,mod_inverse(modxdiff,params.p));
+	slope=mod_bigint(slope,params.p);
+	bigint_t *slope2=mul_bigint(slope,slope);
+	bigint_t *slopep1xdiff=sub_bigint(slope2,p1.x);
+	bigint_t *slopep2xdiff=sub_bigint(slopep1xdiff,p2.x);
+	bigint_t *x=mod_bigint(slopep2xdiff,params.p);
+	bigint_t *p1xsubx=sub_bigint(p1.x,x);
+	bigint_t *slopemulp1xsub=mul_bigint(slope,p1xsubx);
+	bigint_t *slopemulsubp1y=sub_bigint(slopemulp1xsub,p1.y);
+	bigint_t *y=mod_bigint(slopemulsubp1y,params.p);
 	ecdsa_point_t result={x,y};
 	return result;
 }
 
-bool ecdsa_signature_verify(ecdsa_params_t params, ecdsa_signature_t sig,int z,ecdsa_point_t q)
+bool ecdsa_signature_verify(ecdsa_params_t params, ecdsa_signature_t sig,bigint_t *z,ecdsa_point_t q)
 {
-	int w = ecdsa_mod_inverse(sig.s,params.n);
-	int u1=ecdsa_mod(z*w,params.n);
-	int u2=ecdsa_mod(sig.r*w,params.n);
+	bigint_t *w = mod_inverse(sig.s,params.n);
+	bigint_t *u1=mod_bigint(mul_bigint(z,w),params.n);
+	bigint_t *u2=mod_bigint(mul_bigint(sig.r,w),params.n);
 	ecdsa_point_t tmp1=ecdsa_point_times(params,u1,params.g);
 	ecdsa_point_t tmp2=ecdsa_point_times(params,u2,q);
 	ecdsa_point_t p=ecdsa_point_add(params,tmp1,tmp2);
-	return ecdsa_mod(p.x,params.n)==sig.r;
+	return compare_bigint(mod_bigint(p.x,params.n),sig.r)==0;
 }
