@@ -8,9 +8,9 @@
 void print_bigint(bigint_t *n)
 {
   for(int i=0; i<n->length; i++){
-    printf("%02X,",n->data[i]);
+    //printf("%02X,",n->data[i]);
   }
-  printf("\n");
+  //printf("\n");
 }
 bool bigint_is_zero(bigint_t *num)
 {
@@ -252,20 +252,6 @@ char *bigint_to_decimal_str(bigint_t *num)
   return res;
 }
 
-int compare(char *x, char *y)
-{
-  size_t lenx=strlen(x);
-  size_t leny=strlen(y);
-  if(lenx<leny)
-    return -1;
-  else if(lenx>leny)
-    return 1;
-  int cmp=strcmp(x,y);
-  if(cmp>0) return 1;
-  else if(cmp<0) return -1;
-  else return 0;
-}
-
 int compare_bigint(bigint_t *num1, bigint_t *num2)
 {
   size_t lenx=num1->length;
@@ -278,71 +264,6 @@ int compare_bigint(bigint_t *num1, bigint_t *num2)
   if(cmp>0) return 1;
   else if(cmp<0) return -1;
   else return 0;
-}
-
-char *sub(char *x, char *y)
-{
-  char *str1;
-  char *str2;
-  int cmp=compare(x,y);
-  bool is_negative=false;
-  if (cmp<0) {
-    is_negative=true;
-    str1=y;
-    str2=x;
-  } else if (cmp > 0) {
-    is_negative=false;
-    str1=x;
-    str2=y;
-  }
-
-  int obase=10;
-  int len1=strlen(str1);
-  int len2=strlen(str2);
-  char *res=calloc(len1+len2+2,sizeof(char));
-  int borrow=0;
-  int len=len1>len2?len1:len2;
-  int diff=abs(len1-len2);
-  for (int i=len-1; i>=0; i--){
-    int digit_y=0;
-    int digit_x=0;
-    int d=i-diff;
-
-    if(len1>len2) {
-      digit_x=str1[i]-'0';
-      if(d>=0)
-        digit_y=str2[i-diff]-'0';
-    } else if (len1<len2) {
-      if(d>=0)
-        digit_x=str1[i-diff]-'0';
-      digit_y=str2[i]-'0';
-    } else {
-      digit_x=str1[i]-'0';
-      digit_y=str2[i]-'0';
-    }
-
-    digit_x=digit_x-borrow;
-    if(digit_x<digit_y)
-      borrow=1;
-    else 
-      borrow=0;
-    int sub=(borrow*obase+digit_x)-digit_y;
-    int digit=sub % obase;
-    if(digit==0 && i==0){
-      break;
-    }
-    char *str=strdup(res);
-    char chr=digit+'0';
-    strncpy(res,&chr,1);
-    strcpy(res+1,str);
-  }
-  ltrim(res,'0');
-  if(is_negative) {
-    len=strlen(res);
-    memmove(res+1, res, len+1);
-    res[0]='-';
-  }
-  return res;
 }
 
 bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
@@ -478,7 +399,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
       uint16_t numerator=(rem * base) + num1->data[i];
       uint16_t q=numerator / num2->data[0];
       rem=numerator % num2->data[0];
-      printf("q=%d,r=%d\n",q,rem);
+      //printf("q=%d,r=%d\n",q,rem);
       res[i]=q;
     }
 
@@ -528,7 +449,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     uint16_t numerator=(u->data[j] * base) + u->data[j+1];
     uint16_t q=numerator / v->data[0];
     uint16_t r=numerator % v->data[0];
-    printf("q=%d,r=%d\n",q,r);
+    //printf("q=%d,r=%d\n",q,r);
 
     while(q==base || q*v->data[1] > (r * base) + u->data[j+2]) {
       q--;
@@ -549,11 +470,11 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     Uslice->data=slicebuf;
 
     bigint_t *subres=sub_bigint(Uslice,mulres);
-    printf("Uslice=");
+    //printf("Uslice=");
     print_bigint(Uslice);
-    printf("q*V=");
+    //printf("q*V=");
     print_bigint(mulres);
-    printf("Uslice-q*V=");
+    //printf("Uslice-q*V=");
     print_bigint(subres);
     if(subres->sign==NEGATIVE){
       q--;
@@ -564,20 +485,20 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
     int diff=Uslice->length-subres->length;
     memcpy(buf+diff, subres->data, subres->length);
     memcpy(u->data + j, buf,Uslice->length);
-    printf("current U=");
+    //printf("current U=");
     print_bigint(u);
-    printf("current V=");
+    //printf("current V=");
     print_bigint(v);
 
-    printf("q[%d]=%d\n",j,q);
+    //printf("q[%d]=%d\n",j,q);
     res[j]=q;
   }
 
-  printf("final u[]=");
+  //printf("final u[]=");
   for(int i=0; i<target_len; i++){
-    printf("%02X,",u->data[i]);
+    //printf("%02X,",u->data[i]);
   }
-  printf("\n");
+  //printf("\n");
 
   if(remainder!=NULL) {
     bigint_t *r=malloc(sizeof(*r));
@@ -707,13 +628,13 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
   bigint_t *cur_divisor=divisor;
   bigint_t *r;
   while(bigint_is_zero(cur_divisor)==false) {
-    printf("loop xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
+    //printf("loop xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
     bigint_t *qtmp=div_bigint(cur_dividend,cur_divisor,&r);
-    char *qstr=bigint_to_decimal_str(qtmp);
-    char *rstr=bigint_to_decimal_str(r);
-    char *dividend_str=bigint_to_decimal_str(cur_dividend);
-    char *divisor_str=bigint_to_decimal_str(cur_divisor);
-    printf("dividend=%s,divisor=%s,q=%s,r=%s\n",dividend_str,divisor_str,qstr,rstr);
+    //char *qstr=bigint_to_decimal_str(qtmp);
+    //char *rstr=bigint_to_decimal_str(r);
+    //char *dividend_str=bigint_to_decimal_str(cur_dividend);
+    //char *divisor_str=bigint_to_decimal_str(cur_divisor);
+    //printf("dividend=%s,divisor=%s,q=%s,r=%s\n",dividend_str,divisor_str,qstr,rstr);
     //r=cur_dividend % cur_divisor;
     if(bigint_is_zero(r))
       g=cur_divisor;
@@ -767,7 +688,7 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor)
     xi=sub_bigint(xi2,mul_bigint(qi2,xi1));
     yi=sub_bigint(yi2,mul_bigint(qi2,yi1));
   }
-  printf("outside xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
+  //printf("outside xi=%s,xi1=%s,xi2=%s,yi=%s,yi1=%s,yi2=%s\n",bigint_to_decimal_str(xi),bigint_to_decimal_str(xi1),bigint_to_decimal_str(xi2),bigint_to_decimal_str(yi),bigint_to_decimal_str(yi1),bigint_to_decimal_str(yi2));
   if(g->sign==NEGATIVE){
     g->sign=NON_NEGATIVE;
     xi->sign*=-1;
