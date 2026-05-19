@@ -133,11 +133,12 @@ bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2)
 {
   int len_x=num1->length;
   int len_y=num2->length;
+  int len=len_x+len_y+2;
   bigint_t *bi=malloc(sizeof(*bi));
-  uint8_t *res=calloc(len_x+len_y+2,sizeof(uint8_t));
+  uint8_t *res=calloc(len,sizeof(uint8_t));
   bi->data=res;
   bigint_t *total=malloc(sizeof(*total));
-  uint8_t *restotal=calloc(len_x+len_y+2,sizeof(uint8_t));
+  uint8_t *restotal=calloc(len,sizeof(uint8_t));
   total->data=restotal;
   int obase=256;
   int carry=0;
@@ -146,34 +147,25 @@ bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2)
     for (int j=len_x-1; j>=0; j--){
       uint8_t digit_y=num2->data[i];
       uint8_t digit_x=num1->data[j];
-      int mul=digit_x*digit_y+carry;
+      int mul=digit_x*digit_y+carry+total->data[len-counter-total->length-1];
+      int quotient=mul / obase; 
+      int remainder=mul % obase;
       carry=0;
-      int c=0; 
-      c=mul / obase; 
-
-      carry+=c;
-      int digit=mul % obase;
-      memmove(res+1, res, len_x+1);
-      res[0]=digit;
-      bi->length++;
-      if(j==0 && c!=0){
-        memmove(res+1, res, len_x+1);
-        res[0]=c;
-        bi->length++;
+      carry+=quotient;
+      total->data[len-total->length-1-counter]=(uint8_t)remainder;
+      total->length++;
+      if(j==0 && quotient!=0){
+        total->data[len-total->length-1-counter]=(uint8_t)quotient;
+        total->length++;
         carry=0;
       }
     }
-    for(int k=0; k<counter; k++) {
-      res[bi->length]=0;
-      bi->length++;
-    }
-    bigint_t *restotal=add_bigint(total,bi);
-    total=restotal;
-    memset(res,0,len_x+len_y+2);
-    bi->length=0;
+    total->length=0;
     counter++;
   }
+  total->length=len;
   total->sign = num1->sign * num2->sign;
+  bigint_ltrim(total,0);
   return total;
 }
 
