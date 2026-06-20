@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "x509.h"
+#include "asn1.h"
 #include "der.h"
 #define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))
 #define CASE(result,...) {(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__}), result}

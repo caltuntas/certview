@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "x509.h"
+#include "asn1.h"
 #include "der.h"
 #include "oid.h"
 #define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))

@@ -1,5 +1,5 @@
-#ifndef X509_H
-#define X509_H
+#ifndef ASN1_H
+#define ASN1_H
 #include <stdbool.h>
 #include "der.h"
 #include "bigint.h"

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "x509.h"
+#include "asn1.h"
 #include "bigint.h"
 #include "oid.h"
 
