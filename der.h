@@ -75,6 +75,7 @@ typedef struct {
   tag_t tag;
   uint32_t len;
   uint32_t len_meta;
+  uint8_t *start;
   uint8_t *value;
 } tlv_t;
 

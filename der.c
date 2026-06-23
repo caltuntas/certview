@@ -92,11 +92,15 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   } else {
     tlv.len =len;
   }
-  if(tlv.len>0)
+  if(tlv.len>0){
     tlv.value=buf+bytes+2;
-  else 
+		tlv.len_meta=bytes+2;
+	}
+  else {
     tlv.value=NULL;
-  tlv.len_meta=bytes;
+		tlv.len_meta=2;
+	}
+	tlv.start=buf;
 	return tlv;
 }
 
