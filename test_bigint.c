@@ -81,6 +81,12 @@ typedef struct {
 } test_case_modinv;
 
 
+typedef struct {
+  bigint_t num;
+  int expected;
+} test_case_convert_to_int;
+
+
 void print_data(uint8_t *data,size_t len)
 {
   for (int i=0;i<len; i++) {
@@ -658,6 +664,21 @@ static void test_mod_inverse(void)
 }
 
 
+static void test_convert_to_int(void)
+{
+  test_case_convert_to_int cases[] = {
+    {BIGINT(NON_NEGATIVE,2),2},
+    {BIGINT(NEGATIVE,3),-3},
+  };
+  size_t len = ARRAY_LEN(cases);
+  for(int i=0; i<len; i++){
+    test_case_convert_to_int tc=cases[i];
+    int result=bigint_convert_to_int(&tc.num);
+		TEST_ASSERT_EQUAL_INT(result,tc.expected);
+    printf("case=%dP\n",i);
+	}
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -675,5 +696,6 @@ int main(void)
 	RUN_TEST(test_gcd);
 	RUN_TEST(test_xgcd);
 	RUN_TEST(test_mod_inverse);
+	RUN_TEST(test_convert_to_int);
   return UNITY_END();
 }

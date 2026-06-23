@@ -1,6 +1,10 @@
 #ifndef OID_H
 #define OID_H
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct oid_registry_t {
   uint64_t arc;
   char *code;

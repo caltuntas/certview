@@ -2,8 +2,6 @@
 #include "der.h"
 #include "asn1.h"
 
-
-
 int main(int argc, char **argv) 
 {
   char* file_name=argv[1];

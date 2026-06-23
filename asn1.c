@@ -72,6 +72,16 @@ field_t *field_find_child_by_name(field_t *parent,char *child_name)
   return NULL;
 }
 
+field_value_t *find_child_value(field_value_t *parent,char *child_name)
+{
+  for(int i=0; i<parent->count; i++){
+    field_value_t *child=parent->children[i];
+    if(strcmp(child->field->name,child_name)==0)
+      return child;
+  }
+  return NULL;
+}
+
 field_t* create_field()
 {
   field_t *f=calloc(1,sizeof(field_t));

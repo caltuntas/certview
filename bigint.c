@@ -30,6 +30,18 @@ bigint_t *create_bigint_from_int(int num)
   return bigint;
 }
 
+int bigint_convert_to_int(bigint_t *num)
+{
+	int result=0;
+	int counter=0;
+	for(int i=num->length-1; i>=0; i--){
+		result|=num->data[i] << counter;
+		counter+=8;
+	}
+	result*=num->sign;
+	return result;
+}
+
 bigint_t *create_bigint(uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));

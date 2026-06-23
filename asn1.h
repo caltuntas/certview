@@ -80,5 +80,6 @@ char *bit_string_to_str(bit_string_t *bitstring);
 char *octet_string_to_str(octet_string_t *octetstring);
 char *ia5_string_to_str(ia5_string_t *ia5string);
 void decode_basic_constraints(field_value_t *value);
+field_value_t *find_child_value(field_value_t *parent,char *child_name);
 
 #endif

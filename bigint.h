@@ -37,5 +37,5 @@ xgcd_result_t xgcd_bigint(bigint_t *dividend, bigint_t *divisor) ;
 bigint_t *mod_inverse(bigint_t *num, bigint_t *divisor) ;
 char *bigint_to_decimal_str(bigint_t *num);
 int compare_bigint(bigint_t *num1, bigint_t *num2);
-
+int bigint_convert_to_int(bigint_t *num);
 #endif
