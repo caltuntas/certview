@@ -268,6 +268,34 @@ static void test_sha256_message_schedule()
   TEST_ASSERT_EQUAL_UINT32_ARRAY(out,words_expected,64);
 }
 
+static void test_sha256_compress_round()
+{
+  sha256_state_t state={
+    .a = 0x6a09e667,
+    .b = 0xbb67ae85,
+    .c = 0x3c6ef372,
+    .d = 0xa54ff53a,
+    .e = 0x510e527f,
+    .f = 0x9b05688c,
+    .g = 0x1f83d9ab,
+    .h = 0x5be0cd19,
+  };
+  sha256_state_t expected={
+    .a = 0x646DF4B9,
+    .b = 0x6A09E667,
+    .c = 0xBB67AE85,
+    .d = 0x3C6EF372,
+    .e = 0x012D4F0E,
+    .f = 0x510E527F,
+    .g = 0x9B05688C,
+    .h = 0x1F83D9AB,
+  };
+  uint32_t word=0x68656C6C;
+  uint32_t k=0x428a2f98;
+  sha256_state_t actual = sha256_compress_round(state,word,k);
+  TEST_ASSERT_EQUAL_MEMORY(&expected, &actual, sizeof(sha256_state_t));
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -284,5 +312,6 @@ int main(void)
   RUN_TEST(test_sha256_s1);
   RUN_TEST(test_sha256_split_blocks);
   RUN_TEST(test_sha256_message_schedule);
+  RUN_TEST(test_sha256_compress_round);
   return UNITY_END();
 }

@@ -3,6 +3,17 @@
 
 #include <stdint.h>
 
+typedef struct sha256_state_t {
+  uint32_t a;
+  uint32_t b;
+  uint32_t c;
+  uint32_t d;
+  uint32_t e;
+  uint32_t f;
+  uint32_t g;
+  uint32_t h;
+} sha256_state_t;
+
 typedef struct block_t {
   uint8_t buffer[64];
 } block_t;
@@ -25,5 +36,6 @@ uint32_t sha256_s0(uint32_t num);
 uint32_t sha256_s1(uint32_t num);
 void sha256_split_blocks(uint8_t block[64],size_t len,uint32_t words[16]);
 void sha256_message_schedule(uint32_t words[16],uint32_t expanded_words[64]);
+sha256_state_t sha256_compress_round(sha256_state_t state,uint32_t word, uint32_t k);
 
 #endif

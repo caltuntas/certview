@@ -19,3 +19,8 @@ endfunction
 
 "'<,'>v/\<test_div_bigint\>\|UNIT/norm I//
 "'<,'>g/\/\/RUN/norm _xx
+"convert current line containing a binary number to hex
+":'<,'>s/^.*$/\=printf("0x%X", "0b" . getline("."))/g | noh
+"convert visually selected binary to hex
+":'<,'>s/\%V\v(\w+)/\=printf("0x%X", str2nr(submatch(1), 2))/g
+":'<,'>s/\%V\v(\w+)/\=printf("0x%X","0b" . submatch(1))/g
