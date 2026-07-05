@@ -170,3 +170,12 @@ sha256_state_t sha256_compress_round(sha256_state_t state,uint32_t word, uint32_
   newstate.h=state.g;
   return newstate;
 }
+
+sha256_state_t sha256_compress(sha256_state_t state,uint32_t words[64])
+{
+  sha256_state_t newstate=state;
+  for(int i=0; i<64; i++){
+    newstate=sha256_compress_round(newstate,words[i],K[i]);
+  }
+  return newstate;
+}

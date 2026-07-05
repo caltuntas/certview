@@ -296,6 +296,99 @@ static void test_sha256_compress_round()
   TEST_ASSERT_EQUAL_MEMORY(&expected, &actual, sizeof(sha256_state_t));
 }
 
+static void test_sha256_compress()
+{
+  uint32_t words[64]={
+    0x68656C6C,
+    0x6F20776F,
+    0x726C6480,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+    0x58,
+    0x37470237,
+    0x86D0C031,
+    0xD3BD110B,
+    0x783F4782,
+    0x2A907CED,
+    0x4B2F7CC9,
+    0x31E1945D,
+    0x89364964,
+    0x7F7A06DA,
+    0xC179A93A,
+    0xBBE8F655,
+    0xC1AE3E6,
+    0xB0FE0D7D,
+    0x5F6E5593,
+    0x899B52,
+    0x7F1CA94,
+    0x3B5FE5D6,
+    0x686562E6,
+    0xC84E0A9E,
+    0x6AF9B25,
+    0x92EF64D7,
+    0x63F95E5A,
+    0xE31667D7,
+    0x843BDE16,
+    0xEEECA85B,
+    0xA04FF221,
+    0xF918ADB8,
+    0x14A89219,
+    0x1084531D,
+    0x6093E0CD,
+    0x83035FE9,
+    0xD5AE7938,
+    0x393F05AD,
+    0xFB4B1BEF,
+    0xEB75FF29,
+    0x6A369534,
+    0x22FC9CD8,
+    0xA9740D2B,
+    0x60CF3885,
+    0xC4AC983A,
+    0x1142FDAD,
+    0xB0B01DD9,
+    0x98F0C36F,
+    0x7217B81E,
+    0xA2D4679A,
+    0x10F997B,
+    0xFC174F0A,
+    0xC2C2EB16,
+  };
+
+  sha256_state_t state={
+    .a = 0x6a09e667,
+    .b = 0xbb67ae85,
+    .c = 0x3c6ef372,
+    .d = 0xa54ff53a,
+    .e = 0x510e527f,
+    .f = 0x9b05688c,
+    .g = 0x1f83d9ab,
+    .h = 0x5be0cd19,
+  };
+  sha256_state_t expected={
+    .a = 0x4F434152,
+    .b = 0xD7E58F83,
+    .c = 0x68BF5F65,
+    .d = 0x352DB6C0,
+    .e = 0x73769D64,
+    .f = 0xDF4E1862,
+    .g = 0x71051E01,
+    .h = 0x870F00D0,
+  };
+  sha256_state_t actual = sha256_compress(state,words);
+  TEST_ASSERT_EQUAL_MEMORY(&expected, &actual, sizeof(sha256_state_t));
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -313,5 +406,6 @@ int main(void)
   RUN_TEST(test_sha256_split_blocks);
   RUN_TEST(test_sha256_message_schedule);
   RUN_TEST(test_sha256_compress_round);
+  RUN_TEST(test_sha256_compress);
   return UNITY_END();
 }
