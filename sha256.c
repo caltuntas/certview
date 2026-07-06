@@ -2,17 +2,18 @@
 #include <string.h>
 #include "sha256.h"
 
+static const uint32_t H[8] = {
+  0x6a09e667,
+  0xbb67ae85,
+  0x3c6ef372,
+  0xa54ff53a,
+  0x510e527f,
+  0x9b05688c,
+  0x1f83d9ab,
+  0x5be0cd19,
+};
 
-uint32_t h0 = 0x6a09e667;
-uint32_t h1 = 0xbb67ae85;
-uint32_t h2 = 0x3c6ef372;
-uint32_t h3 = 0xa54ff53a;
-uint32_t h4 = 0x510e527f;
-uint32_t h5 = 0x9b05688c;
-uint32_t h6 = 0x1f83d9ab;
-uint32_t h7 = 0x5be0cd19;
-
-uint32_t K[64]={
+static const uint32_t K[64]={
   0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
   0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
   0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -180,42 +181,46 @@ sha256_state_t sha256_compress(sha256_state_t state,uint32_t words[64])
   return newstate;
 }
 
+//TODO:add streaming hash function later such as nodejs update and digest functions
 void sha256_hash(uint8_t *msg,size_t len,uint8_t out[32])
 {
+  uint32_t h[8];
+  memcpy(h,H,sizeof(H));
+
   block_list_t *list = sha256_preprocess(msg,len);
-  sha256_state_t state={
-    .a = h0,
-    .b = h1,
-    .c = h2,
-    .d = h3,
-    .e = h4,
-    .f = h5,
-    .g = h6,
-    .h = h7,
-  };
   for(int i=0; i<list->count; i++){
+    sha256_state_t state={
+      .a = h[0],
+      .b = h[1],
+      .c = h[2],
+      .d = h[3],
+      .e = h[4],
+      .f = h[5],
+      .g = h[6],
+      .h = h[7],
+    };
     block_t block=list->blocks[i];
     uint32_t out[16]={0};
     sha256_split_blocks(block.buffer,64,out);
     uint32_t expanded_words[64]={0};
     sha256_message_schedule(out,expanded_words);
     state=sha256_compress(state,expanded_words);
+    h[0]=h[0]+state.a;
+    h[1]=h[1]+state.b;
+    h[2]=h[2]+state.c;
+    h[3]=h[3]+state.d;
+    h[4]=h[4]+state.e;
+    h[5]=h[5]+state.f;
+    h[6]=h[6]+state.g;
+    h[7]=h[7]+state.h;
   }
-  h0=h0+state.a;
-  h1=h1+state.b;
-  h2=h2+state.c;
-  h3=h3+state.d;
-  h4=h4+state.e;
-  h5=h5+state.f;
-  h6=h6+state.g;
-  h7=h7+state.h;
 
-  be_uint32_to_array(h0,out);
-  be_uint32_to_array(h1,out+4);
-  be_uint32_to_array(h2,out+8);
-  be_uint32_to_array(h3,out+12);
-  be_uint32_to_array(h4,out+16);
-  be_uint32_to_array(h5,out+20);
-  be_uint32_to_array(h6,out+24);
-  be_uint32_to_array(h7,out+28);
+  be_uint32_to_array(h[0],out);
+  be_uint32_to_array(h[1],out+4);
+  be_uint32_to_array(h[2],out+8);
+  be_uint32_to_array(h[3],out+12);
+  be_uint32_to_array(h[4],out+16);
+  be_uint32_to_array(h[5],out+20);
+  be_uint32_to_array(h[6],out+24);
+  be_uint32_to_array(h[7],out+28);
 }

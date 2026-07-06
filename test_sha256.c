@@ -400,6 +400,19 @@ static void test_sha256_hash()
   TEST_ASSERT_EQUAL_UINT8_ARRAY(expected,out,32);
 }
 
+//TODO:add more tests and edge cases
+static void test_sha256_hash_long_message()
+{
+  char *msg="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua";
+  uint8_t expected[32]={
+    0x29,0xC0,0x3D,0x36,0x1D,0xDE,0x0D,0xBF,0xF0,0x70,0xF8,0xEF,0xAD,0x6D,0xA0,0x5F,0xCB,0x72,0xE0,0xCC,0x82,0x5C,0x30,0x1A,0xB8,0xF0,0x59,0x62,0x24,0xBC,0x23,0xC7,
+  };
+  uint8_t out[32]={0};
+  size_t len=strlen(msg);
+  sha256_hash((uint8_t*)msg,len,out);
+  TEST_ASSERT_EQUAL_UINT8_ARRAY(expected,out,32);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -419,5 +432,6 @@ int main(void)
   RUN_TEST(test_sha256_compress_round);
   RUN_TEST(test_sha256_compress);
   RUN_TEST(test_sha256_hash);
+  RUN_TEST(test_sha256_hash_long_message);
   return UNITY_END();
 }
