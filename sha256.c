@@ -179,3 +179,43 @@ sha256_state_t sha256_compress(sha256_state_t state,uint32_t words[64])
   }
   return newstate;
 }
+
+void sha256_hash(uint8_t *msg,size_t len,uint8_t out[32])
+{
+  block_list_t *list = sha256_preprocess(msg,len);
+  sha256_state_t state={
+    .a = h0,
+    .b = h1,
+    .c = h2,
+    .d = h3,
+    .e = h4,
+    .f = h5,
+    .g = h6,
+    .h = h7,
+  };
+  for(int i=0; i<list->count; i++){
+    block_t block=list->blocks[i];
+    uint32_t out[16]={0};
+    sha256_split_blocks(block.buffer,64,out);
+    uint32_t expanded_words[64]={0};
+    sha256_message_schedule(out,expanded_words);
+    state=sha256_compress(state,expanded_words);
+  }
+  h0=h0+state.a;
+  h1=h1+state.b;
+  h2=h2+state.c;
+  h3=h3+state.d;
+  h4=h4+state.e;
+  h5=h5+state.f;
+  h6=h6+state.g;
+  h7=h7+state.h;
+
+  be_uint32_to_array(h0,out);
+  be_uint32_to_array(h1,out+4);
+  be_uint32_to_array(h2,out+8);
+  be_uint32_to_array(h3,out+12);
+  be_uint32_to_array(h4,out+16);
+  be_uint32_to_array(h5,out+20);
+  be_uint32_to_array(h6,out+24);
+  be_uint32_to_array(h7,out+28);
+}
