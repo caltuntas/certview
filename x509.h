@@ -3,6 +3,14 @@
 
 #include "oid.h"
 #include "asn1.h"
+#include "ecdsa.h"
+
+typedef struct signature_t {
+  bit_string_t *bitstring;
+  union {
+    ecdsa_signature_t ecdsa;
+  } signature;
+} signature_t;
 
 typedef struct extension_t {
 	oid_t *extnID;
@@ -38,7 +46,7 @@ typedef struct tbs_certificate_t {
 typedef struct certificate_t {
 	tbs_certificate_t *tbsCertificate;
 	algorithm_identifier_t *signatureAlgorithm;
-	bit_string_t *signatureValue;
+	signature_t *signatureValue;
 } certificate_t;
 
 certificate_t *x509_create_from_asn1(field_value_t *root);
