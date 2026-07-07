@@ -1,4 +1,5 @@
 #include "test-framework/unity.h"
+#include "test_custom_assertions.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -141,9 +142,7 @@ static void test_mul_bigint(void)
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
     printf("%sx%s=%s\n",strnum1,strnum2,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
   }
 }
 
@@ -168,8 +167,7 @@ static void test_bigint_create(void)
     bigint_t *actual=create_bigint(tc.hex,tc.length);
     char *decimal_str =bigint_to_decimal_str(actual);
     printf("case=%d %s\n",i,decimal_str);
-    TEST_ASSERT_EQUAL_INT(actual->sign,tc.result.sign);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(actual->data,tc.result.data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,actual);
 	}
 }
 
@@ -228,9 +226,7 @@ static void test_decimal_to_bigint(void)
 		test_case_decimal_to_hex tc=cases[i];
 		bigint_t *bi =bigint_from_decimal_str(tc.decimal);
     printf("case=%d %s\n",i,tc.decimal);
-    //print_data(bi->data,bi->length);
-		TEST_ASSERT_EQUAL_INT(tc.bigint.length,bi->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.bigint.data,bi->data,tc.bigint.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.bigint,bi);
 	}
 }
 
@@ -292,9 +288,7 @@ static void test_add_bigint(void)
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
     printf("case %d (%s)+(%s)=%s\n",i,strnum1,strnum2,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
 	}
 }
 
@@ -353,15 +347,9 @@ static void test_sub_bigint(void)
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
     printf("case %d (%s)-(%s)=%s\n",i,strnum1,strnum2,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
-
-    TEST_ASSERT_EQUAL_INT(tc.result.length,negativeres->length);
-    //if result is 0 sign cannot be flipped/negated
-    if(tc.result.length!=1 && tc.result.data[0]!=0)
-      TEST_ASSERT_NOT_EQUAL_INT(tc.result.sign,negativeres->sign);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,negativeres->data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
+    negativeres->sign=result->sign;
+    TEST_ASSERT_BIGINT_EQUAL(result,negativeres);
   }
 }
 
@@ -451,13 +439,9 @@ static void test_div_bigint(void)
     char *quotient_str =bigint_to_decimal_str(quotient);
     char *remainder_str =bigint_to_decimal_str(remainder);
     printf("case=%d %s÷%s=%s, remainder=%s\n",i,dividend_str,divisor_str,quotient_str,remainder_str);
-    TEST_ASSERT_EQUAL_INT(tc.quotient.sign,quotient->sign);
-    TEST_ASSERT_EQUAL_INT(tc.quotient.length,quotient->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.quotient.data,quotient->data,tc.quotient.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.quotient,quotient);
     if(tc.remainder.length!=0){
-      TEST_ASSERT_EQUAL_INT(tc.remainder.sign,remainder->sign);
-      TEST_ASSERT_EQUAL_INT(tc.remainder.length,remainder->length);
-      TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.remainder.data,remainder->data,tc.remainder.length);
+      TEST_ASSERT_BIGINT_EQUAL(&tc.remainder,remainder);
     }
   }
 }
@@ -480,8 +464,7 @@ static void test_shift_left_bigint(void)
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strres =bigint_to_decimal_str(result);
     printf("%s<<%d=%s\n",strnum1,tc.bits,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
   }
 }
 
@@ -511,8 +494,7 @@ static void test_shift_right_bigint(void)
     char *strnum1 =bigint_to_decimal_str(&tc.num1);
     char *strres =bigint_to_decimal_str(result);
     printf("%s>>%d=%s\n",strnum1,tc.bits,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
   }
 }
 
@@ -555,9 +537,7 @@ static void test_mod_bigint(void)
     char *strnum2 =bigint_to_decimal_str(&tc.num2);
     char *strres =bigint_to_decimal_str(result);
     printf("%sx%s=%s\n",strnum1,strnum2,strres);
-    TEST_ASSERT_EQUAL_INT(tc.result.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.result.data,result->data,tc.result.length);
-    TEST_ASSERT_EQUAL_INT(tc.result.sign,result->sign);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.result,result);
   }
 }
 
@@ -581,8 +561,7 @@ static void test_gcd(void)
     test_case_gcd tc=cases[i];
     bigint_t *result=gcd_bigint(&tc.dividend,&tc.divisor);
     printf("case=%dP\n",i);
-    TEST_ASSERT_EQUAL_INT(tc.expected.length,result->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.expected.data,result->data,tc.expected.length);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.expected,result);
   }
 }
 
@@ -615,17 +594,10 @@ static void test_xgcd(void)
     test_case_xgcd tc=cases[i];
     xgcd_result_t result=xgcd_bigint(&tc.a,&tc.b);
     printf("case=%dP\n",i);
-    TEST_ASSERT_EQUAL_INT(tc.g.length,result.g->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.g.data,result.g->data,tc.g.length);
-    TEST_ASSERT_EQUAL_INT(result.g->sign,tc.g.sign);
 
-    TEST_ASSERT_EQUAL_INT(tc.x.length,result.x->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.x.data,result.x->data,tc.x.length);
-    TEST_ASSERT_EQUAL_INT(result.x->sign,tc.x.sign);
-
-    TEST_ASSERT_EQUAL_INT(tc.y.length,result.y->length);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.y.data,result.y->data,tc.y.length);
-    TEST_ASSERT_EQUAL_INT(result.y->sign,tc.y.sign);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.g,result.g);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.x,result.x);
+    TEST_ASSERT_BIGINT_EQUAL(&tc.y,result.y);
   }
 }
 
@@ -655,8 +627,7 @@ static void test_mod_inverse(void)
     bigint_t *result=mod_inverse(&tc.num,&tc.divisor);
     printf("case=%dP\n",i);
 		if(tc.expected.sign!=0) {
-			TEST_ASSERT_EQUAL_INT(tc.expected.length,result->length);
-			TEST_ASSERT_EQUAL_UINT8_ARRAY(tc.expected.data,result->data,tc.expected.length);
+      TEST_ASSERT_BIGINT_EQUAL(&tc.expected,result);
 		}else {
 			TEST_ASSERT_NULL(result);
 		}

@@ -296,7 +296,9 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
     n1=num1;
     n2=num2;
   } else {
-    return create_bigint((uint8_t[]){0},1);
+    bigint_t *zero=create_bigint((uint8_t[]){0},1);
+    zero->sign=NON_NEGATIVE;
+    return zero;
   }
 
   int obase=256;
@@ -344,6 +346,8 @@ bigint_t *sub_bigint(bigint_t *num1,bigint_t *num2)
     bigint->sign=num1->sign;
   else 
     bigint->sign=NEGATIVE*num1->sign;
+  if(bigint_is_zero(bigint))
+    bigint->sign=NON_NEGATIVE;
   return bigint;
 }
 
@@ -529,6 +533,7 @@ bigint_t *div_bigint(bigint_t *num1, bigint_t *num2, bigint_t **remainder)
 bigint_t *shift_left_bigint(bigint_t *num1,int bits)
 {
   bigint_t *bi=malloc(sizeof(*bi));
+  bi->sign=num1->sign;
   int new_bytes=bits / 8;
   int shift_size=bits % 8;
   //pre-allocate possible carry byte in advance
@@ -556,6 +561,7 @@ bigint_t *shift_left_bigint(bigint_t *num1,int bits)
 bigint_t *shift_right_bigint(bigint_t *num1,int bits)
 {
   bigint_t *bi=malloc(sizeof(*bi));
+  bi->sign=num1->sign;
   int disposed_bytes=bits / 8;
   int shift_size=bits % 8;
   if(shift_size==0 && bits!=0)

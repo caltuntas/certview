@@ -12,7 +12,7 @@ test:
 	gcc -g test-framework/unity.c der.c asn1.c bigint.c oid.c test_asn1.c -o test_asn1.out
 	./test_asn1.out
 
-	gcc -g test-framework/unity.c bigint.c test_bigint.c -o test_bigint.out
+	gcc -g test-framework/unity.c bigint.c test_custom_assertions.c test_bigint.c -o test_bigint.out
 	./test_bigint.out
 
 	gcc -g test-framework/unity.c der.c asn1.c bigint.c oid.c test_decode.c -o test_decode.out

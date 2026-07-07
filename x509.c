@@ -57,7 +57,6 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   if(strcmp(alg_id,"1.2.840.10045.4.3.2")==0) {
     field_t *field_ecdsa_sig=x509_ecdsa_sig_value();
     field_value_t *out=NULL;
-    //signatureNode->value.bitstring->data[1]
     uint8_t *buf=signatureNode->value.bitstring->data;
     tlv_t actual = parse_tlv(buf+1,signatureNode->tlv->tlv.len-1);
     tlv_node_t *root = build_tlv(actual);
@@ -69,7 +68,6 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
       decode(sfv,NULL);
       cert->signatureValue->signature.ecdsa.r=rfv->value.bigint;
       cert->signatureValue->signature.ecdsa.s=sfv->value.bigint;
-      //add_field_value(fv,out);
     }
   }
   return cert;
