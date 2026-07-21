@@ -49,6 +49,8 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   field_value_t *versionNode=find_child_value(tbsCertNode,"version"); 
   int version=bigint_convert_to_int(versionNode->value.bigint);
   cert->tbsCertificate->version=version;
+  cert->tbsCertificate->value=tbsCertNode->tlv->tlv.start;
+  cert->tbsCertificate->value_len=tbsCertNode->tlv->tlv.len+tbsCertNode->tlv->tlv.len_meta;
   field_value_t *signatureAlgorithmNode=find_child_value(root,"AlgorithmIdentifier"); 
   field_value_t *signatureNode=find_child_value(root,"signatureValue"); 
   cert->signatureValue->bitstring=signatureNode->value.bitstring;

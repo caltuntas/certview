@@ -41,6 +41,8 @@ typedef struct tbs_certificate_t {
 	//validity
 	attribute_t **subject;
   subject_public_key_info_t *subjectPublicKeyInfo;	
+  uint8_t *value;
+  size_t value_len;
 } tbs_certificate_t;
 
 typedef struct certificate_t {

@@ -21,7 +21,7 @@ test:
 	gcc -g test-framework/unity.c oid.c test_oid.c -o test_oid.out
 	./test_oid.out
 
-	gcc -g test-framework/unity.c x509.c asn1.c oid.c bigint.c der.c test_custom_assertions.c test_x509.c -o test_x509.out
+	gcc -g test-framework/unity.c x509.c asn1.c oid.c bigint.c der.c sha256.c test_custom_assertions.c test_x509.c -o test_x509.out
 	./test_x509.out
 
 	gcc -g test-framework/unity.c sha256.c test_sha256.c -o test_sha256.out
