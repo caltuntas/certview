@@ -35,7 +35,7 @@ field_t *x509_ecdsa_sig_value()
 algorithm_identifier_t *x509_create_algorithm_identifier_from_asn1(field_value_t *root)
 {
   algorithm_identifier_t *alg=malloc(sizeof(*alg));
-  alg->algorithm=root->children[0]->value.oid;
+  alg->algorithm_id=root->children[0]->value.oid;
   return alg;
 }
 
@@ -44,9 +44,23 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   certificate_t *cert=malloc(sizeof(*cert));
   cert->tbsCertificate=malloc(sizeof(tbs_certificate_t));
   cert->signatureValue=malloc(sizeof(signature_t));
+  cert->tbsCertificate->subjectPublicKeyInfo=malloc(sizeof(subject_public_key_info_t));
+  cert->tbsCertificate->subjectPublicKeyInfo->algorithm=malloc(sizeof(algorithm_identifier_t));
 
   field_value_t *tbsCertNode=find_child_value(root,"TBSCertificate"); 
   field_value_t *versionNode=find_child_value(tbsCertNode,"version"); 
+  field_value_t *spkiNode=find_child_value(tbsCertNode,"SubjectPublicKeyInfo"); 
+  field_value_t *algorithmIdentifierNode=find_child_value(spkiNode,"AlgorithmIdentifier"); 
+  field_value_t *algorithmNode=find_child_value(algorithmIdentifierNode,"algorithm"); 
+  field_value_t *paramsNode=find_child_value(algorithmIdentifierNode,"parameters"); 
+  cert->tbsCertificate->subjectPublicKeyInfo->algorithm->algorithm_id=algorithmNode->value.oid;
+  char *spki_alg_id =oid_to_str(cert->tbsCertificate->subjectPublicKeyInfo->algorithm->algorithm_id);
+  if(strcmp(spki_alg_id,"1.2.840.10045.2.1")==0) {
+    cert->tbsCertificate->subjectPublicKeyInfo->algorithm->alg_type=ALG_TYPE_EC;
+    cert->tbsCertificate->subjectPublicKeyInfo->algorithm->parameters.ec_curve_id=paramsNode->value.oid;
+    char *curve_id_str=oid_to_str(cert->tbsCertificate->subjectPublicKeyInfo->algorithm->parameters.ec_curve_id);
+    char *b=curve_id_str;
+  }
   int version=bigint_convert_to_int(versionNode->value.bigint);
   cert->tbsCertificate->version=version;
   cert->tbsCertificate->value=tbsCertNode->tlv->tlv.start;
@@ -55,7 +69,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   field_value_t *signatureNode=find_child_value(root,"signatureValue"); 
   cert->signatureValue->bitstring=signatureNode->value.bitstring;
   cert->signatureAlgorithm=x509_create_algorithm_identifier_from_asn1(signatureAlgorithmNode);
-  char *alg_id =oid_to_str(cert->signatureAlgorithm->algorithm);
+  char *alg_id =oid_to_str(cert->signatureAlgorithm->algorithm_id);
   if(strcmp(alg_id,"1.2.840.10045.4.3.2")==0) {
     field_t *field_ecdsa_sig=x509_ecdsa_sig_value();
     field_value_t *out=NULL;

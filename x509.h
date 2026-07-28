@@ -5,6 +5,10 @@
 #include "asn1.h"
 #include "ecdsa.h"
 
+typedef enum {
+  ALG_TYPE_EC
+} algorithm_type_t;
+
 typedef struct signature_t {
   bit_string_t *bitstring;
   union {
@@ -24,8 +28,11 @@ typedef struct attribute_t {
 } attribute_t;
 
 typedef struct algorithm_identifier_t {
-	oid_t *algorithm;
-	void *parameters;
+	oid_t *algorithm_id;
+  algorithm_type_t alg_type;
+	union {
+    oid_t *ec_curve_id;
+  } parameters;
 } algorithm_identifier_t;
 
 typedef struct subject_public_key_info_t {

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define BIGINT(sign,...) (bigint_t){sign,(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__})}
+
 typedef enum {
   NEGATIVE=-1,
   NON_NEGATIVE=1

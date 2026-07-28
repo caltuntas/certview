@@ -5,6 +5,7 @@
 #include <string.h>
 #include "x509.h"
 #include "sha256.h"
+#include "ecdsa.h"
 #define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))
 #define BIGINT(sign,...) (bigint_t){sign,(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__})}
 
@@ -61,6 +62,32 @@ static void test_create_x509_certificate_from_asn1()
   uint8_t hash[32]={0};
   sha256_hash(cert->tbsCertificate->value,cert->tbsCertificate->value_len,hash);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(expected_hash,hash,32);
+  char *curve_id_str=oid_to_str(cert->tbsCertificate->subjectPublicKeyInfo->algorithm->parameters.ec_curve_id);
+  ecdsa_params_t params;
+  if(strcmp(curve_id_str,"1.2.840.10045.3.1.7")==0) {
+    params=ecdsa_params[PRIME256V1];
+  }
+  ecdsa_signature_t sig = {
+    .r=&r,
+    .s=&s
+  };
+  ecdsa_point_t issuer_q = {
+    &BIGINT(1,
+      0x07,0x21,0xC7,0x20,0x7C,0xAD,0x35,0x2C, 0xD3,0x4B,0xE1,0x77,0x24,0x0E,0xE1,0x1C, 0xC0,0xC6,0x77,0x67,0x29,0x71,0x8F,0x62, 0xDC,0xC2,0xD3,0x2A,0x61,0x3A,0x0C,0x94
+    ),
+    &BIGINT(1,
+      0xCA,0x73,0xA2,0x70,0xBD,0x6E,0x74,0xA7, 0x02,0xA8,0x76,0xF7,0x76,0x42,0x3E,0x11, 0x00,0x0C,0xB6,0x8D,0x27,0xA3,0xB1,0x58, 0x30,0xE6,0x37,0xA1,0xEA,0xCC,0xAD,0xDC
+    )
+  };
+  bigint_t *z = create_bigint(hash,32);
+  bool valid =
+    ecdsa_signature_verify(
+      params,
+      sig,
+      z,
+      issuer_q
+    );
+  TEST_ASSERT_TRUE(valid);
 }
 
 int main(void)

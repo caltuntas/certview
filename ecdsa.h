@@ -4,6 +4,11 @@
 #include <stdbool.h>
 #include "bigint.h"
 
+typedef enum {
+  PRIME256V1,
+} ec_curve_type;
+
+
 typedef struct ecdsa_point_t {
 	bigint_t *x;
 	bigint_t *y;
@@ -22,6 +27,8 @@ typedef struct ecdsa_signature_t {
 	bigint_t *r;
 	bigint_t *s;
 } ecdsa_signature_t;
+
+extern ecdsa_params_t ecdsa_params[];
 
 ecdsa_point_t ecdsa_point_add(ecdsa_params_t params, ecdsa_point_t p1, ecdsa_point_t p2);
 ecdsa_point_t ecdsa_point_times(ecdsa_params_t params, bigint_t *times,ecdsa_point_t p);

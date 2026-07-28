@@ -521,6 +521,15 @@ field_t* create_x509_definition()
   ai_algorithm->value_type = OBJECT_IDENTIFIER;
   ai_algorithm->required = true;
 
+  /*
+   * if algorithm is EC parameter details can be found in https://www.ietf.org/rfc/rfc5480.txt
+   * 2.1.1.  Unrestricted Algorithm Identifier and Parameters
+  ECParameters ::= CHOICE {
+       namedCurve         OBJECT IDENTIFIER
+       -- implicitCurve   NULL
+       -- specifiedCurve  SpecifiedECDomain
+  }
+  */
   field_t *ai_parameters =create_field();
   ai_parameters->name = "parameters";
   ai_parameters->value_type = ANY;
@@ -806,6 +815,12 @@ void decode(field_value_t *value,decoder_t *decoder)
         decoder->decoder_func(value);
       } else {
         value->value.octetstring=octet_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+        value->decoded=true;
+      }
+    }
+    if(value->field->value_type==ANY){
+      if(value->tlv!=NULL && value->tlv->tlv.tag.number==OBJECT_IDENTIFIER) {
+        value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
         value->decoded=true;
       }
     }
