@@ -25,6 +25,7 @@ typedef struct xgcd_result_t {
 
 void bigint_ltrim(bigint_t *bi,uint8_t val);
 bigint_t *create_bigint(uint8_t *buf,size_t len);
+bigint_t *create_bigint_unsigned(uint8_t *buf,size_t len);
 bigint_t *create_bigint_from_int(int num);
 bigint_t *mul_bigint(bigint_t *num1, bigint_t *num2);
 bigint_t *add_bigint(bigint_t *num1, bigint_t *num2);

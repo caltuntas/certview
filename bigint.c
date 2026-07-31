@@ -66,6 +66,16 @@ bigint_t *create_bigint(uint8_t *buf,size_t len)
   return bigint;
 }
 
+bigint_t *create_bigint_unsigned(uint8_t *buf,size_t len)
+{
+  bigint_t *bigint =malloc(sizeof(*bigint));
+  bigint->sign=NON_NEGATIVE;
+  bigint->data=malloc(sizeof(uint8_t)*len);
+  memcpy(bigint->data,buf,len);
+  bigint->length=len;
+  return bigint;
+}
+
 bigint_t *add_bigint(bigint_t *num1, bigint_t *num2)
 {
   bigint_t *bi=malloc(sizeof(*bi));

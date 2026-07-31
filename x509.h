@@ -27,6 +27,13 @@ typedef struct attribute_t {
 	void *value;
 } attribute_t;
 
+typedef struct subject_public_key_t {
+	bit_string_t *bit_string;
+  union {
+    ecdsa_point_t *ec_point;
+  } public_key;
+} subject_public_key_t;
+
 typedef struct algorithm_identifier_t {
 	oid_t *algorithm_id;
   algorithm_type_t alg_type;
@@ -37,7 +44,7 @@ typedef struct algorithm_identifier_t {
 
 typedef struct subject_public_key_info_t {
 	algorithm_identifier_t *algorithm;
-	bit_string_t *subject_public_key;
+	subject_public_key_t *subject_public_key;
 } subject_public_key_info_t;
 
 typedef struct tbs_certificate_t {

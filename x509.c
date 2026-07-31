@@ -46,6 +46,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   cert->signatureValue=malloc(sizeof(signature_t));
   cert->tbsCertificate->subjectPublicKeyInfo=malloc(sizeof(subject_public_key_info_t));
   cert->tbsCertificate->subjectPublicKeyInfo->algorithm=malloc(sizeof(algorithm_identifier_t));
+  cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key=malloc(sizeof(subject_public_key_t));
 
   field_value_t *tbsCertNode=find_child_value(root,"TBSCertificate"); 
   field_value_t *versionNode=find_child_value(tbsCertNode,"version"); 
@@ -53,6 +54,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   field_value_t *algorithmIdentifierNode=find_child_value(spkiNode,"AlgorithmIdentifier"); 
   field_value_t *algorithmNode=find_child_value(algorithmIdentifierNode,"algorithm"); 
   field_value_t *paramsNode=find_child_value(algorithmIdentifierNode,"parameters"); 
+  field_value_t *subjectPubKeyNode=find_child_value(spkiNode,"subjectPublicKey"); 
   cert->tbsCertificate->subjectPublicKeyInfo->algorithm->algorithm_id=algorithmNode->value.oid;
   char *spki_alg_id =oid_to_str(cert->tbsCertificate->subjectPublicKeyInfo->algorithm->algorithm_id);
   if(strcmp(spki_alg_id,"1.2.840.10045.2.1")==0) {
@@ -60,6 +62,15 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
     cert->tbsCertificate->subjectPublicKeyInfo->algorithm->parameters.ec_curve_id=paramsNode->value.oid;
     char *curve_id_str=oid_to_str(cert->tbsCertificate->subjectPublicKeyInfo->algorithm->parameters.ec_curve_id);
     char *b=curve_id_str;
+
+    cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key->bit_string=subjectPubKeyNode->value.bitstring;
+    bit_string_t *bitstr=subjectPubKeyNode->value.bitstring;
+    //https://datatracker.ietf.org/doc/html/rfc5480#section-2.2
+    if(bitstr->data[1]==0x04) {
+      cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key->public_key.ec_point=malloc(sizeof(ecdsa_point_t));
+      cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key->public_key.ec_point->x=create_bigint_unsigned(bitstr->data+2,32);
+      cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key->public_key.ec_point->y=create_bigint_unsigned(bitstr->data+34,32);
+    }
   }
   int version=bigint_convert_to_int(versionNode->value.bigint);
   cert->tbsCertificate->version=version;
