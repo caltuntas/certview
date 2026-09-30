@@ -7,6 +7,8 @@
 #include "asn1.h"
 #include "der.h"
 
+static const char *CRLFCRLF="\r\n\r\n";
+
 typedef struct html_header_t {
   char *buffer;
   size_t content_len;
@@ -26,10 +28,10 @@ typedef struct html_response_t {
 
 void html_parse_header(html_header_t *header,char *buffer)
 {
-  char *strptr=strstr(buffer,"\r\n\r\n");
+  char *strptr=strstr(buffer,CRLFCRLF);
   if(strptr==NULL)
     return;
-  size_t header_len=strptr-buffer;
+  size_t header_len=strptr+strlen(CRLFCRLF)-buffer;
   header->buffer=malloc(sizeof(char)*header_len);
   header->header_len=header_len;
   memcpy(header->buffer,buffer,header_len);
@@ -89,14 +91,14 @@ void download()
   html_response_t response={0};
   while(1){
     char buffer[1024];
-    size_t buffer_size=sizeof(buffer)-1;
+    size_t buffer_size=sizeof(buffer);
     bytes_received=recv(s,buffer,buffer_size,0);
     if(bytes_received<0){
       perror("recv failed");
     } else if(bytes_received==0) {
       perror("recv failed");
+      break;
     } else {
-      buffer[bytes_received]='\0';
       printf("server reply=%s\n",buffer);
     }
     memcpy(reply+total_bytes,buffer,bytes_received);
@@ -105,24 +107,22 @@ void download()
       html_parse_header(&response.header,reply);
       if(response.header.header_len>0) {
         response.body.buffer=malloc(sizeof(char)*response.header.content_len);
-        memcpy(response.body.buffer,reply+response.header.header_len+4,total_bytes-response.header.header_len);
+        memcpy(response.body.buffer,reply+response.header.header_len,total_bytes-response.header.header_len);
         response.body.current_len=total_bytes-response.header.header_len;
-        response.body.len=response.header.content_len+4;
+        response.body.len=response.header.content_len;
 
       }
     } else if (response.body.len!=0){
-      memcpy(response.body.buffer+response.body.current_len-4,buffer,bytes_received);
+      memcpy(response.body.buffer+response.body.current_len,buffer,bytes_received);
       response.body.current_len+=bytes_received;
     }
 
-    if(response.body.current_len>=response.body.len) {
-
+    if(response.body.len!=0 && response.body.current_len>=response.body.len) {
       FILE *file = fopen("output.bin", "wb");
       if (file == NULL) {
         perror("Error opening file");
         exit(1);
       }
-
       size_t bytes_written = fwrite(response.body.buffer, sizeof(unsigned char), response.body.len,file);
       break;
     }
