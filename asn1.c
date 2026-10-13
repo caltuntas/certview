@@ -5,6 +5,9 @@
 #include "bigint.h"
 #include "oid.h"
 
+field_t *x509_general_names_definition();
+field_t *x509_general_name_definition();
+
 bit_string_t *bit_string_create(uint8_t *buf,size_t len)
 {
   bit_string_t *bitstr=malloc(sizeof(*bitstr));
@@ -896,7 +899,6 @@ ExtKeyUsageSyntax ::= SEQUENCE SIZE (1..MAX) OF KeyPurposeId
 
 KeyPurposeId ::= OBJECT IDENTIFIER
  */
-
 field_t *x509_extensions_extended_key_usage_definition()
 {
   field_t *key_usage =create_field();
@@ -915,6 +917,55 @@ field_t *x509_extensions_extended_key_usage_definition()
 
   add_field(key_usage, purpose);
   return key_usage;
+}
+
+//https://www.rfc-editor.org/info/rfc5280/#section-4.2.2.1
+/*
+AuthorityInfoAccessSyntax  ::=
+          SEQUENCE SIZE (1..MAX) OF AccessDescription
+
+  AccessDescription  ::=  SEQUENCE {
+          accessMethod          OBJECT IDENTIFIER,
+          accessLocation        GeneralName  }
+*/
+field_t *x509_extensions_authority_info_access()
+{
+  field_t *auth_info_access_syntax =create_field();
+  auth_info_access_syntax->name = "AuthorityInfoAccessSyntax";
+  auth_info_access_syntax->value_type = SEQUENCE;
+  auth_info_access_syntax->pc = CONSTRUCTED;
+  auth_info_access_syntax->element_type = REFERENCE_TYPE;
+  auth_info_access_syntax->reference_type = "AccessDescription";
+  auth_info_access_syntax->required = true;
+
+  field_t *access_description =create_field();
+  access_description->name = "AccessDescription";
+  access_description->value_type = SEQUENCE;
+  access_description->pc = CONSTRUCTED;
+  access_description->required = true;
+
+  add_field(auth_info_access_syntax, access_description);
+
+  field_t *access_method =create_field();
+  access_method->name = "accessMethod";
+  access_method->value_type = OBJECT_IDENTIFIER;
+  access_method->required = true;
+
+  field_t *access_location = create_field();
+  access_location->name = "accessLocation";
+  access_location->value_type = REFERENCE_TYPE;
+  access_location->pc = CONSTRUCTED;
+  access_location->reference_type = "GeneralName";
+  access_location->required = true;
+
+  field_t *general_names=x509_general_name_definition();
+
+  add_field(access_location, general_names);
+  add_field(access_description, access_method);
+  add_field(access_description, access_location);
+
+
+  return auth_info_access_syntax;
 }
 
 /*
@@ -980,8 +1031,6 @@ EDIPartyName ::= SEQUENCE {
      nameAssigner            [0] DirectoryString OPTIONAL,
      partyName               [1] DirectoryString
 }
-GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
-
 GeneralName ::= CHOICE {
      otherName                       [0]     AnotherName,
      rfc822Name                      [1]     IA5String,
@@ -994,7 +1043,7 @@ GeneralName ::= CHOICE {
      registeredID                    [8]     OBJECT IDENTIFIER
 }
 */
-field_t *x509_general_names_definition()
+field_t *x509_general_name_definition()
 {
   field_t *another_name = create_field();
   another_name->name = "AnotherName";
@@ -1018,11 +1067,15 @@ field_t *x509_general_names_definition()
   add_field(another_name, an_type_id);
   add_field(another_name, an_value);
 
-  field_t *edi_party_name = create_field();
-  edi_party_name->name = "EDIPartyName";
-  edi_party_name->value_type = SEQUENCE;
-  edi_party_name->pc = CONSTRUCTED;
-  edi_party_name->required = true;
+  field_t *gn_edi = create_field();
+  gn_edi->name = "ediPartyName";
+  gn_edi->tag_class = CONTEXT_SPECIFIC;
+  gn_edi->tag_number = 5;
+  gn_edi->value_type = REFERENCE_TYPE;
+  gn_edi->encoding_type = IMPLICIT;
+  gn_edi->reference_type = "EDIPartyName";
+  gn_edi->pc = CONSTRUCTED;
+  gn_edi->required = true;
 
   field_t *edi_name_assigner = create_field();
   edi_name_assigner->name = "nameAssigner";
@@ -1038,10 +1091,18 @@ field_t *x509_general_names_definition()
   edi_party->value_type = ANY;   // DirectoryString
   edi_party->required = true;
 
+
+  field_t *edi_party_name = create_field();
+  edi_party_name->name = "EDIPartyName";
+  edi_party_name->value_type = SEQUENCE;
+  edi_party_name->pc = CONSTRUCTED;
+  edi_party_name->required = true;
+  add_field(gn_edi, edi_party_name);
+
   add_field(edi_party_name, edi_name_assigner);
   add_field(edi_party_name, edi_party);
 
-  field_t *general_name = create_field();
+  field_t *general_name= create_field();
   general_name->name = "GeneralName";
   general_name->value_type = CHOICE;
   general_name->required = true;
@@ -1096,17 +1157,6 @@ field_t *x509_general_names_definition()
   add_field(gn_dir,name);
 
 
-  field_t *gn_edi = create_field();
-  gn_edi->name = "ediPartyName";
-  gn_edi->tag_class = CONTEXT_SPECIFIC;
-  gn_edi->tag_number = 5;
-  gn_edi->value_type = REFERENCE_TYPE;
-  gn_edi->encoding_type = IMPLICIT;
-  gn_edi->reference_type = "EDIPartyName";
-  gn_edi->pc = CONSTRUCTED;
-  gn_edi->required = true;
-
-  add_field(gn_edi, edi_party_name);
 
   field_t *gn_uri = create_field();
   gn_uri->name = "uniformResourceIdentifier";
@@ -1142,6 +1192,35 @@ field_t *x509_general_names_definition()
   add_field(general_name, gn_ip);
   add_field(general_name, gn_regid);
 
+  return general_name;
+}
+
+
+/*
+AnotherName ::= SEQUENCE {
+     type-id    OBJECT IDENTIFIER,
+     value      [0] EXPLICIT ANY DEFINED BY type-id
+}
+EDIPartyName ::= SEQUENCE {
+     nameAssigner            [0] DirectoryString OPTIONAL,
+     partyName               [1] DirectoryString
+}
+GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+
+GeneralName ::= CHOICE {
+     otherName                       [0]     AnotherName,
+     rfc822Name                      [1]     IA5String,
+     dNSName                         [2]     IA5String,
+     x400Address                     [3]     ORAddress,
+     directoryName                   [4]     Name,
+     ediPartyName                    [5]     EDIPartyName,
+     uniformResourceIdentifier       [6]     IA5String,
+     iPAddress                       [7]     OCTET STRING,
+     registeredID                    [8]     OBJECT IDENTIFIER
+}
+*/
+field_t *x509_general_names_definition()
+{
   field_t *general_names = create_field();
   general_names->name = "GeneralNames";
   general_names->value_type = SEQUENCE;
@@ -1150,6 +1229,7 @@ field_t *x509_general_names_definition()
   general_names->reference_type = "GeneralName";
   general_names->required = true;
 
+  field_t *general_name=x509_general_name_definition();
   add_field(general_names, general_name);
 
   return general_names;
@@ -1290,6 +1370,17 @@ void decode_basic_constraints(field_value_t *fv)
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_san,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_san,out);
+        if(is_valid){
+          add_field_value(fv,out);
+        }
+      }
+      if(strcmp(oid_str,"1.3.6.1.5.5.7.1.1")==0) {
+        field_t *field_auth_info_access=x509_extensions_authority_info_access();
+        field_value_t *out=NULL;
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_node_t *root = build_tlv(actual);
+        bool is_valid=validate_schema(field_auth_info_access,root,&out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_auth_info_access,out);
         if(is_valid){
           add_field_value(fv,out);
         }
