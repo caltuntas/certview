@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include "asn1.h"
 #include "der.h"
+#include "x509.h"
 
 static const char *CRLFCRLF="\r\n\r\n";
 
@@ -52,13 +53,24 @@ void html_parse_header(html_header_t *header,char *buffer)
   }
 }
 
-void download()
+void download(char *url)
 {
+  char protocol[16]={0};
+  char host[256]={0};
+  char path[1024]={0};
+
+  //TODO:check sscanf security for dynamic inputs
+  int n=sscanf(url,"%15[^:]://%255[^/]%1023[^\n]",protocol,host,path);
+  if (n != 3) {
+    fprintf(stderr, "parse failed (got %d fields)\n", n);
+    return;
+  }
+
   //http://i.cf-b.ssl.com/Cloudflare-TLS-I-E1.cer
   struct addrinfo hints={0}, *res, *res0;
   hints.ai_family=PF_UNSPEC;
   hints.ai_socktype=SOCK_STREAM;
-  int error=getaddrinfo("i.cf-b.ssl.com","http",&hints,&res0);
+  int error=getaddrinfo(host,protocol,&hints,&res0);
   if(error) {
     fprintf(stderr,"error status=%s",gai_strerror(error));
     exit(1);
@@ -69,13 +81,14 @@ void download()
     printf("connection problem");
     exit(1);
   }
-  char *http_get="GET /Cloudflare-TLS-I-E1.cer HTTP/1.1\r\n"
-    "Host: i.cf-b.ssl.com\r\n"
+  char http_get[1000]={0};
+  sprintf(http_get,"GET %s  HTTP/1.1\r\n"
+    "Host: %s\r\n"
     "User-Agent: Wget/1.25.0\r\n"
     "Accept: */*\r\n"
     "Accept-Encoding: identity\r\n"
     "Connection: close\r\n"
-    "\r\n";
+    "\r\n",path,host);
   size_t msglen=strlen(http_get);
   ssize_t bytes_sent=send(s,http_get,msglen,0);
   if(bytes_sent<0) {
@@ -131,7 +144,6 @@ void download()
 
 int main(int argc, char **argv) 
 {
-  download();
   char* file_name=argv[1];
 
   uint8_t *buffer;
@@ -164,7 +176,10 @@ int main(int argc, char **argv)
   basic_const_decoder.field_value_type=OCTET_STRING;
   basic_const_decoder.decoder_func=decode_basic_constraints;
   decode(mapping,&basic_const_decoder);
+	certificate_t *leaf_cert=x509_create_from_asn1(mapping);
+  printf("download url:%s\n",leaf_cert->tbsCertificate->extensions[2]->value.aia->caIssuers);
   print_debug(is_valid,buffer,len,root,parent,mapping);
+  download(leaf_cert->tbsCertificate->extensions[2]->value.aia->caIssuers);
 
   return EXIT_SUCCESS;
 }

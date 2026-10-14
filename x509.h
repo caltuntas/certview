@@ -16,10 +16,22 @@ typedef struct signature_t {
   } signature;
 } signature_t;
 
+typedef struct aia_t {
+  char *caIssuers;
+  char *ocsp;
+} aia_t;
+
+typedef enum extension_type_t {
+  EXTENSION_AIA
+} extension_type_t;
+
 typedef struct extension_t {
 	oid_t *extnID;
-	bool *critical;
+	bool critical;
 	void *extnValue;
+  union {
+    aia_t *aia;
+  } value;
 } extension_t;
 
 typedef struct attribute_t {
@@ -57,6 +69,7 @@ typedef struct tbs_certificate_t {
   subject_public_key_info_t *subjectPublicKeyInfo;	
   uint8_t *value;
   size_t value_len;
+  extension_t **extensions;
 } tbs_certificate_t;
 
 typedef struct certificate_t {

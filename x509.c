@@ -47,6 +47,8 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   cert->tbsCertificate->subjectPublicKeyInfo=malloc(sizeof(subject_public_key_info_t));
   cert->tbsCertificate->subjectPublicKeyInfo->algorithm=malloc(sizeof(algorithm_identifier_t));
   cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key=malloc(sizeof(subject_public_key_t));
+  //TODO:hard coded extension size 
+  cert->tbsCertificate->extensions=malloc(sizeof(extension_t*)*20);
 
   field_value_t *tbsCertNode=find_child_value(root,"TBSCertificate"); 
   field_value_t *versionNode=find_child_value(tbsCertNode,"version"); 
@@ -72,6 +74,43 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
       cert->tbsCertificate->subjectPublicKeyInfo->subject_public_key->public_key.ec_point->y=create_bigint_unsigned(bitstr->data+34,32);
     }
   }
+
+  field_value_t *extensionsNode=find_child_value(tbsCertNode,"extensions");
+  for(int i=0; i<extensionsNode->count; i++){
+    field_value_t *childNode=extensionsNode->children[i];
+    field_value_t *extIdNode=find_child_value(childNode,"extnID");
+    field_value_t *criticalNode=find_child_value(childNode,"critical");
+    field_value_t *extValueNode=find_child_value(childNode,"extnValue");
+
+    extension_t *extension=malloc(sizeof(*extension));
+    extension->extnID=extIdNode->value.oid;
+    char *str_extId =oid_to_str(extIdNode->value.oid);
+    //authorityInfoAccess
+    if(strcmp(str_extId,"1.3.6.1.5.5.7.1.1")==0) {
+      aia_t *aia=malloc(sizeof(*aia));
+      field_value_t *aiasyntaxNode=find_child_value(extValueNode,"AuthorityInfoAccessSyntax");
+      for(int k=0; k<aiasyntaxNode->count; k++){
+        //field_value_t *accessDescNode=find_child_value(aiasyntaxNode,"AccessDescription");
+        field_value_t *accessMethodNode=find_child_value(aiasyntaxNode->children[k],"accessMethod");
+        field_value_t *generalNameNode=find_child_value(aiasyntaxNode->children[k],"GeneralName");
+        oid_t *am_oid=accessMethodNode->value.oid;
+        char *str_am_oid=oid_to_str(am_oid);
+        if(strcmp(str_am_oid,"1.3.6.1.5.5.7.48.2")==0) {
+          field_value_t *resIdNode=find_child_value(generalNameNode,"uniformResourceIdentifier");
+          char *str=ia5_string_to_str(resIdNode->value.ia5string);
+          aia->caIssuers=str;
+        }
+        else if(strcmp(str_am_oid,"1.3.6.1.5.5.7.48.1")==0) {
+          field_value_t *resIdNode=find_child_value(generalNameNode,"uniformResourceIdentifier");
+          char *str=ia5_string_to_str(resIdNode->value.ia5string);
+          aia->ocsp=str;
+        }
+      }
+      extension->value.aia=aia;
+    }
+    cert->tbsCertificate->extensions[i]=extension;
+  }
+
   int version=bigint_convert_to_int(versionNode->value.bigint);
   cert->tbsCertificate->version=version;
   cert->tbsCertificate->value=tbsCertNode->tlv->tlv.start;
