@@ -80,12 +80,10 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
     return tlv;
   }
 
-  /*
-  if(buf!=NULL && size==0) {
+  if(buf!=NULL && size<=1) {
     tlv.value=NULL;
     return tlv;
   }
-  */
 
   uint8_t tag_byte = buf[0];
   tag_t tag={0};
@@ -148,7 +146,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
         value_ptr=value_ptr+2;
       else
         value_ptr=node->children[count]->tlv.value+node->children[count]->tlv.value_len;
-      len=child.value_len;
+      //len=child.value_len;
       count++;
       node->count=count;
     }
