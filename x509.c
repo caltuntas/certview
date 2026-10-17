@@ -89,7 +89,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
     if(strcmp(str_extId,"1.3.6.1.5.5.7.1.1")==0) {
       aia_t *aia=malloc(sizeof(*aia));
       field_value_t *aiasyntaxNode=find_child_value(extValueNode,"AuthorityInfoAccessSyntax");
-      for(int k=0; k<aiasyntaxNode->count; k++){
+      for(int k=0; aiasyntaxNode!=NULL && k<aiasyntaxNode->count; k++){
         //field_value_t *accessDescNode=find_child_value(aiasyntaxNode,"AccessDescription");
         field_value_t *accessMethodNode=find_child_value(aiasyntaxNode->children[k],"accessMethod");
         field_value_t *generalNameNode=find_child_value(aiasyntaxNode->children[k],"GeneralName");
@@ -114,7 +114,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
   int version=bigint_convert_to_int(versionNode->value.bigint);
   cert->tbsCertificate->version=version;
   cert->tbsCertificate->value=tbsCertNode->tlv->tlv.start;
-  cert->tbsCertificate->value_len=tbsCertNode->tlv->tlv.len+tbsCertNode->tlv->tlv.len_meta;
+  cert->tbsCertificate->value_len=tbsCertNode->tlv->tlv.value_len+tbsCertNode->tlv->tlv.header_len;
   field_value_t *signatureAlgorithmNode=find_child_value(root,"AlgorithmIdentifier"); 
   field_value_t *signatureNode=find_child_value(root,"signatureValue"); 
   cert->signatureValue->bitstring=signatureNode->value.bitstring;
@@ -124,7 +124,7 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
     field_t *field_ecdsa_sig=x509_ecdsa_sig_value();
     field_value_t *out=NULL;
     uint8_t *buf=signatureNode->value.bitstring->data;
-    tlv_t actual = parse_tlv(buf+1,signatureNode->tlv->tlv.len-1);
+    tlv_t actual = parse_tlv(buf+1,signatureNode->tlv->tlv.value_len-1);
     tlv_node_t *root = build_tlv(actual);
     bool is_valid=validate_schema(field_ecdsa_sig,root,&out);
     if(is_valid){

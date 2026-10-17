@@ -177,18 +177,18 @@ void print_field_value(field_value_t *value,int indent)
     if(value->tlv==NULL) {
       printf("omitted");
     }else if (value->tlv->count <= 0 && value->field->value_type!=CHOICE) {
-      for(int i=0; i<value->tlv->tlv.len; i++) {
+      for(int i=0; i<value->tlv->tlv.value_len; i++) {
         printf("%02X,",*(value->tlv->tlv.value+i));
       }
     } else if(value->field->value_type!=CHOICE && value->field->pc!=CONSTRUCTED && value->tlv && value->tlv->count>0){
       tlv_node_t *node=value->tlv->children[0];
-      for(int i=0; i<node->tlv.len; i++) {
+      for(int i=0; i<node->tlv.value_len; i++) {
         printf("%02X,",*(node->tlv.value+i));
       }
       //print_node_values(value->tlv,0);
     }
     else {
-      for(int i=value->tlv->tlv.len_meta+2; i>0; i--) {
+      for(int i=value->tlv->tlv.header_len+2; i>0; i--) {
         printf("%02X,",*(value->tlv->tlv.value-i));
       }
     }
@@ -792,9 +792,9 @@ void decode(field_value_t *value,decoder_t *decoder)
         //TODO:check IMPLICIT encoding
         if(value->field->encoding_type==EXPLICIT){
           tlv_node_t *tlv=value->tlv->children[0];
-          value->value.bigint=create_bigint(tlv->tlv.value,tlv->tlv.len);      
+          value->value.bigint=create_bigint(tlv->tlv.value,tlv->tlv.value_len);      
         }else {
-          value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.len);      
+          value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.value_len);      
         }
       }else{
         value->value.bigint=NULL;      
@@ -802,28 +802,28 @@ void decode(field_value_t *value,decoder_t *decoder)
       value->decoded=true;
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
-      value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==BIT_STRING) {
-      value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==IA5String) {
-      value->value.ia5string=ia5_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+      value->value.ia5string=ia5_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==OCTET_STRING) {
       if(decoder!=NULL) {
         decoder->decoder_func(value);
       } else {
-        value->value.octetstring=octet_string_create(value->tlv->tlv.value,value->tlv->tlv.len);
+        value->value.octetstring=octet_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
         value->decoded=true;
       }
     }
     if(value->field->value_type==ANY){
       if(value->tlv!=NULL && value->tlv->tlv.tag.number==OBJECT_IDENTIFIER) {
-        value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.len);
+        value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
         value->decoded=true;
       }
     }
@@ -1324,7 +1324,7 @@ void decode_basic_constraints(field_value_t *fv)
       char *oid_str =oid_to_str(oid);
       if(strcmp(oid_str,"2.5.29.19")==0) {
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_basic_constraints,root,&out);
         if(is_valid){
@@ -1333,10 +1333,10 @@ void decode_basic_constraints(field_value_t *fv)
       }
       if(strcmp(oid_str,"2.5.29.35")==0) {
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_identifier,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_identifier,out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_identifier,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1344,10 +1344,10 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.15")==0) {
         field_t *field_key_usage=x509_extensions_key_usage_definition();
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_usage,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_key_usage,out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1355,10 +1355,10 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.37")==0) {
         field_t *field_ext_key_usage=x509_extensions_extended_key_usage_definition();
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_ext_key_usage,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_ext_key_usage,out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_ext_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1366,10 +1366,10 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.17")==0) {
         field_t *field_san=x509_san_definition();
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_san,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_san,out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_san,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1377,10 +1377,10 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"1.3.6.1.5.5.7.1.1")==0) {
         field_t *field_auth_info_access=x509_extensions_authority_info_access();
         field_value_t *out=NULL;
-        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.len);
+        tlv_t actual = parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_auth_info_access,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.len,root,field_auth_info_access,out);
+        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_auth_info_access,out);
         if(is_valid){
           add_field_value(fv,out);
         }

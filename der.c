@@ -18,13 +18,13 @@ void print_tlv_node(tlv_node_t *node,int indent)
   } 
   const char *type_str=type_t_toString(node->tlv.tag.type);
   const char *class_str=class_t_toString(node->tlv.tag.class);
-  printf("%*s %s(%s,len=%d):",indent,"",tag_number_str,type_str,node->tlv.len);
+  printf("%*s %s(%s,len=%d):",indent,"",tag_number_str,type_str,node->tlv.value_len);
   if (node->count <= 0) {
-    for(int i=0; i<node->tlv.len; i++) {
+    for(int i=0; i<node->tlv.value_len; i++) {
       printf("%02X,",*(node->tlv.value+i));
     }
   } else {
-    for(int i=node->tlv.len_meta+2; i>0; i--) {
+    for(int i=node->tlv.header_len+2; i>0; i--) {
       printf("%02X,",*(node->tlv.value-i));
     }
   }
@@ -44,13 +44,13 @@ void print_node_values(tlv_node_t *node,int indent)
   } 
   const char *type_str=type_t_toString(node->tlv.tag.type);
   const char *class_str=class_t_toString(node->tlv.tag.class);
-  printf("%*s %s(%s,len=%d):",indent,"",tag_number_str,type_str,node->tlv.len);
+  printf("%*s %s(%s,len=%d):",indent,"",tag_number_str,type_str,node->tlv.value_len);
   if (node->count <= 0) {
-    for(int i=0; i<node->tlv.len; i++) {
+    for(int i=0; i<node->tlv.value_len; i++) {
       printf("%02X,",*(node->tlv.value+i));
     }
   } else {
-    for(int i=node->tlv.len_meta+2; i>0; i--) {
+    for(int i=node->tlv.header_len+2; i>0; i--) {
       printf("%02X,",*(node->tlv.value-i));
     }
   }
@@ -74,31 +74,43 @@ Tag Byte: 7 6 5 4 3 2 1 0
 */
 tlv_t parse_tlv(uint8_t *buf,size_t size)
 {
+  tlv_t tlv={0};
+  if(buf==NULL){
+    tlv.value=NULL;
+    return tlv;
+  }
+
+  /*
+  if(buf!=NULL && size==0) {
+    tlv.value=NULL;
+    return tlv;
+  }
+  */
+
   uint8_t tag_byte = buf[0];
   tag_t tag={0};
   tag.class = tag_byte >> 6;
   tag.type=(tag_byte & 0b00100000)!=0;
   tag.number=tag_byte & 0x1F;
 
-  tlv_t tlv={0};
 	tlv.tag=tag;
   uint8_t len=buf[1];
   uint8_t bytes=0;
   if(len > 128) {
     bytes = len & 0x0F;
     for (int i=0;i<bytes; i++) {
-      tlv.len |= buf[2+i] << (8*(bytes-i-1));
+      tlv.value_len |= buf[2+i] << (8*(bytes-i-1));
     }
   } else {
-    tlv.len =len;
+    tlv.value_len =len;
   }
-  if(tlv.len>0){
+  if(tlv.value_len>0){
     tlv.value=buf+bytes+2;
-		tlv.len_meta=bytes+2;
+		tlv.header_len=bytes+2;
 	}
   else {
     tlv.value=NULL;
-		tlv.len_meta=2;
+		tlv.header_len=2;
 	}
 	tlv.start=buf;
 	return tlv;
@@ -124,19 +136,19 @@ void add_node(tlv_node_t *parent, tlv_node_t *child)
 tlv_node_t* build_tlv(tlv_t tlv)
 {
   tlv_node_t* node=create_node(tlv);
-  size_t len=tlv.len;
+  size_t len=tlv.value_len;
   uint8_t *value_ptr = tlv.value;
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
-    while(value_ptr!=NULL && value_ptr < tlv.value+tlv.len-1) {
+    while(value_ptr!=NULL && value_ptr < tlv.value+tlv.value_len-1) {
       tlv_t child = parse_tlv(value_ptr,len);
       tlv_node_t* childNode=build_tlv(child);
       add_node(node,childNode);
-      if(childNode->tlv.value==NULL && childNode->tlv.len==0)
+      if(childNode->tlv.value==NULL && childNode->tlv.value_len==0)
         value_ptr=value_ptr+2;
       else
-        value_ptr=node->children[count]->tlv.value+node->children[count]->tlv.len;
-      len=child.len;
+        value_ptr=node->children[count]->tlv.value+node->children[count]->tlv.value_len;
+      len=child.value_len;
       count++;
       node->count=count;
     }
@@ -144,7 +156,7 @@ tlv_node_t* build_tlv(tlv_t tlv)
     node->tlv.tag.class = tlv.tag.class;
     node->tlv.tag.number = tlv.tag.number;
     node->tlv.tag.type = tlv.tag.type;
-    node->tlv.len= tlv.len;
+    node->tlv.value_len= tlv.value_len;
     node->tlv.value= tlv.value;
   }
   return node;
