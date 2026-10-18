@@ -20,7 +20,7 @@ typedef struct oid_t {
 	uint64_t *arcs;
 } oid_t;
 
-oid_t *oid_create(uint8_t *buf,size_t len);
+oid_t *oid_create(const uint8_t *buf,size_t len);
 char *oid_to_str(oid_t *oid);
 char *oid_to_reg_str(oid_t *oid);
 

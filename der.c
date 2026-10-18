@@ -1,6 +1,6 @@
 #include "der.h"
 
-void print_data(uint8_t *data,size_t len)
+void print_data(const uint8_t *data,size_t len)
 {
   for (int i=0;i<len; i++) {
     printf("%02X,",data[i]);
@@ -72,17 +72,14 @@ Tag Byte: 7 6 5 4 3 2 1 0
           | +---------- Primitive / Constructed (bit 6)
           +------------ Class (bits 7–6)
 */
-tlv_t parse_tlv(uint8_t *buf,size_t size)
+parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
 {
-  tlv_t tlv={0};
   if(buf==NULL){
-    tlv.value=NULL;
-    return tlv;
+    return PARSE_TLV_INVALID_ARG;
   }
 
   if(buf!=NULL && size<=1) {
-    tlv.value=NULL;
-    return tlv;
+    return PARSE_TLV_INVALID_ARG;
   }
 
   uint8_t tag_byte = buf[0];
@@ -91,27 +88,27 @@ tlv_t parse_tlv(uint8_t *buf,size_t size)
   tag.type=(tag_byte & 0b00100000)!=0;
   tag.number=tag_byte & 0x1F;
 
-	tlv.tag=tag;
+	out->tag=tag;
   uint8_t len=buf[1];
   uint8_t bytes=0;
   if(len > 128) {
     bytes = len & 0x0F;
     for (int i=0;i<bytes; i++) {
-      tlv.value_len |= buf[2+i] << (8*(bytes-i-1));
+      out->value_len |= buf[2+i] << (8*(bytes-i-1));
     }
   } else {
-    tlv.value_len =len;
+    out->value_len =len;
   }
-  if(tlv.value_len>0){
-    tlv.value=buf+bytes+2;
-		tlv.header_len=bytes+2;
+  if(out->value_len>0){
+    out->value=buf+bytes+2;
+		out->header_len=bytes+2;
 	}
   else {
-    tlv.value=NULL;
-		tlv.header_len=2;
+    out->value=NULL;
+		out->header_len=2;
 	}
-	tlv.start=buf;
-	return tlv;
+	out->start=buf;
+	return PARSE_TLV_OK;
 }
 
 tlv_node_t* create_node(tlv_t t)
@@ -135,11 +132,12 @@ tlv_node_t* build_tlv(tlv_t tlv)
 {
   tlv_node_t* node=create_node(tlv);
   size_t len=tlv.value_len;
-  uint8_t *value_ptr = tlv.value;
+  const uint8_t *value_ptr = tlv.value;
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
     while(value_ptr!=NULL && value_ptr < tlv.value+tlv.value_len-1) {
-      tlv_t child = parse_tlv(value_ptr,len);
+      tlv_t child = {0};
+      parse_tlv_status_t parse_result= parse_tlv(value_ptr,len,&child);
       tlv_node_t* childNode=build_tlv(child);
       add_node(node,childNode);
       if(childNode->tlv.value==NULL && childNode->tlv.value_len==0)

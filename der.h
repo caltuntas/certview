@@ -65,6 +65,11 @@ ENUM_DEFINE_TO_STRING(ENUM_type, type_t)
 ENUM_DECLARE(ENUM_tag_number, tag_number_t)
 ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 
+typedef enum parse_tlv_status_t {
+  PARSE_TLV_OK,
+  PARSE_TLV_INVALID_ARG,
+} parse_tlv_status_t;
+
 typedef struct {
   class_t class;
   type_t type;
@@ -75,8 +80,8 @@ typedef struct {
   tag_t tag;
   uint32_t value_len;
   uint32_t header_len;
-  uint8_t *start;
-  uint8_t *value;
+  const uint8_t *start;
+  const uint8_t *value;
 } tlv_t;
 
 
@@ -86,10 +91,10 @@ typedef struct tlv_node_t {
   size_t count;
 } tlv_node_t;
 
-tlv_t parse_tlv(uint8_t *buf,size_t size);
+parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out);
 tlv_node_t* build_tlv(tlv_t tlv);
 void print_tlv_node(tlv_node_t *node,int indent);
 void print_node_values(tlv_node_t *node,int indent);
-void print_data(uint8_t *data,size_t len);
+void print_data(const uint8_t *data,size_t len);
 
 #endif

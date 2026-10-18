@@ -42,7 +42,7 @@ int bigint_convert_to_int(bigint_t *num)
 	return result;
 }
 
-bigint_t *create_bigint(uint8_t *buf,size_t len)
+bigint_t *create_bigint(const uint8_t *buf,size_t len)
 {
   bigint_t *bigint =malloc(sizeof(*bigint));
   if((buf[0] & 0x80)==0x80)

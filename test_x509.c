@@ -46,13 +46,15 @@ static void test_create_x509_certificate_from_asn1()
 
   size_t len;
 	uint8_t *leaf_cert_buffer=read_file("example.der",&len);
-	tlv_t tlv = parse_tlv(leaf_cert_buffer,len);
+	tlv_t tlv = {0};
+    parse_tlv_status_t parse_result= parse_tlv(leaf_cert_buffer,len,&tlv);
 	tlv_node_t *root =build_tlv(tlv);
 	field_t *parent=create_x509_definition();
 
   size_t intermediate_len;
 	uint8_t *intermediate_cert_buffer=read_file("cloudflare.der",&intermediate_len);
-	tlv_t inm_tlv = parse_tlv(intermediate_cert_buffer,intermediate_len);
+	tlv_t inm_tlv = {0};
+    parse_tlv_status_t parse_result1= parse_tlv(intermediate_cert_buffer,intermediate_len,&inm_tlv);
 	tlv_node_t *inm_root =build_tlv(inm_tlv);
 	field_t *inm_parent=create_x509_definition();
 

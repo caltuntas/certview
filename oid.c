@@ -10,7 +10,7 @@
 //TODO:error hangling
 //TODO:unterminated buffer
 //TODO:edge cases
-oid_t *oid_create(uint8_t *buf,size_t len)
+oid_t *oid_create(const uint8_t *buf,size_t len)
 {
   oid_t *oid =malloc(sizeof(*oid));
   oid->buffer=calloc(len,sizeof(uint8_t));

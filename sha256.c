@@ -64,7 +64,7 @@ void be_uint32_to_array(uint32_t w,uint8_t arr[4]) {
 	arr[3] = w >> 0;
 }
 
-block_list_t *sha256_preprocess(uint8_t *msg,size_t len)
+block_list_t *sha256_preprocess(const uint8_t *msg,size_t len)
 {
 	block_list_t *list=malloc(sizeof(*list));
 	uint64_t len_byte=len*8;
@@ -181,7 +181,7 @@ sha256_state_t sha256_compress(sha256_state_t state,uint32_t words[64])
 }
 
 //TODO:add streaming hash function later such as nodejs update and digest functions
-void sha256_hash(uint8_t *msg,size_t len,uint8_t out[32])
+void sha256_hash(const uint8_t *msg,size_t len,uint8_t out[32])
 {
 	uint32_t h[8];
 	memcpy(h,H,sizeof(H));
