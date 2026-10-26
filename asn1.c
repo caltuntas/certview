@@ -760,6 +760,8 @@ field_t* create_x509_definition()
 
 void print_debug(bool valid, const uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value)
 {
+  if(node==NULL)
+    return;
   static int counter=1;
   printf("#######Case %d############\n",counter++);
   printf("---ASN1 Definition---\n");

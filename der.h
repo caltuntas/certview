@@ -68,6 +68,8 @@ ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 typedef enum parse_tlv_status_t {
   PARSE_TLV_OK,
   PARSE_TLV_INVALID_ARG,
+  PARSE_TLV_INVALID_ENCODING,
+  PARSE_TLV_TRUNCATED,
 } parse_tlv_status_t;
 
 typedef struct {
@@ -78,8 +80,8 @@ typedef struct {
 
 typedef struct {
   tag_t tag;
-  uint32_t value_len;
-  uint32_t header_len;
+  size_t value_len;
+  size_t header_len;
   const uint8_t *start;
   const uint8_t *value;
 } tlv_t;
