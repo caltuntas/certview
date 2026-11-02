@@ -27,6 +27,9 @@ test:
 	gcc $(CFLAGS) test-framework/unity.c sha256.c test_sha256.c -o test_sha256.out
 	./test_sha256.out
 
+	gcc $(CFLAGS) test-framework/unity.c integer.c test_integer.c -o test_integer.out
+	./test_integer.out
+
 clean:
 	rm -rf *.out *.o *.dSYM
 
