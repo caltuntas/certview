@@ -1,4 +1,5 @@
 #include "der.h"
+#include "integer.h"
 
 void print_data(const uint8_t *data,size_t len)
 {
@@ -93,8 +94,8 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
   if(buf==NULL ||out==NULL){
     return PARSE_TLV_INVALID_ARG;
   }
-  if(buf!=NULL && size<=1) {
-    return PARSE_TLV_INVALID_ARG;
+  if(size<=1) {
+    return PARSE_TLV_TRUNCATED;
   }
   uint8_t tag_byte = buf[0];
   tag_t tag={0};
@@ -102,6 +103,7 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
   tag.type=(tag_byte & 0b00100000)!=0;
   uint32_t tag_number=tag_byte & 0x1F;
   size_t len_index=1;
+  size_t required_header_size;
   if (tag_number >= 0x1F) {
     tag_number=0;
     uint8_t octet;
@@ -112,11 +114,17 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
       tag_number=(tag_number << 7);
       tag_number=tag_number | (octet & 0x7F);
       len_index++;
-      if(size < len_index +1)
+      if(!integer_add_sizet_safe(len_index,1,&required_header_size)){
+        return PARSE_TLV_INVALID_ENCODING;
+      }
+      if(size < required_header_size)
         return PARSE_TLV_TRUNCATED;
     }while((octet & 0x80)!=0);
   }
-  if(size < len_index +1)
+  if(!integer_add_sizet_safe(len_index,1,&required_header_size)){
+    return PARSE_TLV_INVALID_ENCODING;
+  }
+  if(size < required_header_size)
     return PARSE_TLV_TRUNCATED;
   if(tag_number<31 && len_index>1)
     return PARSE_TLV_INVALID_ENCODING;
@@ -127,20 +135,38 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
 
   uint8_t len=buf[len_index];
   size_t bytes=0;
-  uint8_t long_form_len=len & (1<<7);
+  uint8_t is_long_form_len=len & (1<<7);
   uint32_t value_len=0;
-  if(long_form_len) {
+  size_t required_size;
+  if(is_long_form_len) {
     bytes = len & 0x7F;
-    if(size<bytes+len_index+1)
-      return PARSE_TLV_TRUNCATED;
-    //since value_len is uint32_t, it can only hold 4 bytes
-    //so it long form length encoding has more than 4 bytes, it's rejected
-    if(size<bytes || bytes >4) 
+    //since value_len is uint32_t, it can't hold more than size of uint32_t
+    if(bytes>sizeof(uint32_t)) 
       return PARSE_TLV_INVALID_ENCODING;
-    for (size_t i=0;i<bytes; i++) {
-      value_len |= (uint32_t)buf[len_index+1+i] << (8*(bytes-i-1));
+    size_t value_offset;
+    if(!integer_add_sizet_safe(bytes,len_index,&value_offset)){
+      return PARSE_TLV_INVALID_ENCODING;
     }
-    if(size-bytes-len_index-1<value_len) 
+    if(!integer_add_sizet_safe(value_offset,1,&value_offset)){
+      return PARSE_TLV_INVALID_ENCODING;
+    }
+    if(size<value_offset)
+      return PARSE_TLV_TRUNCATED;
+    size_t length_offset;
+    if(!integer_add_sizet_safe(len_index,1,&length_offset)){
+      return PARSE_TLV_INVALID_ENCODING;
+    }
+    for (size_t i=0;i<bytes; i++) {
+      size_t current_offset;
+      if(!integer_add_sizet_safe(length_offset,i,&current_offset)){
+        return PARSE_TLV_INVALID_ENCODING;
+      }
+      value_len |= (uint32_t)buf[current_offset] << (8*(bytes-i-1));
+    }
+    if(!integer_add_sizet_safe(value_len,value_offset,&required_size)){
+      return PARSE_TLV_INVALID_ENCODING;
+    }
+    if(size<required_size) 
       return PARSE_TLV_TRUNCATED;
     //DER requires lengths below 128 to use short-form encoding
     if(value_len<128)
@@ -149,18 +175,32 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
       return PARSE_TLV_INVALID_ENCODING;
   }else {
     value_len = len & 0x7F;
-    if(size<value_len+len_index+1) 
+    if(!integer_add_sizet_safe(value_len,len_index,&required_size)){
+      return PARSE_TLV_INVALID_ENCODING;
+    }
+    if(!integer_add_sizet_safe(required_size,1,&required_size)){
+      return PARSE_TLV_INVALID_ENCODING;
+    }
+    if(size<required_size) 
       return PARSE_TLV_TRUNCATED;
+  }
+  size_t value_index;
+  size_t total_header_len;
+  if(!integer_add_sizet_safe(len_index,1,&value_index)){
+    return PARSE_TLV_INVALID_ENCODING;
+  }
+  if(!integer_add_sizet_safe(bytes,value_index,&total_header_len)){
+    return PARSE_TLV_INVALID_ENCODING;
   }
   out->tag=tag;
   out->value_len=value_len;
   if(out->value_len>0){
-    out->value=buf+bytes+len_index+1;
-    out->header_len=bytes+len_index+1;
+    out->value=buf+total_header_len;
+    out->header_len=total_header_len;
   }
   else {
     out->value=NULL;
-    out->header_len=len_index+1;
+    out->header_len=value_index;
   }
   out->start=buf;
   return PARSE_TLV_OK;

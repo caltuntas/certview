@@ -1530,11 +1530,13 @@ void UnityAssertEqualMemory(UNITY_INTERNAL_PTR expected,
         UNITY_FAIL_AND_BAIL;
     }
 
-    while (elements--)
+    while (elements>0)
     {
+			elements--;
         bytes = length;
-        while (bytes--)
+        while (bytes>0)
         {
+					bytes--;
             if (*ptr_exp != *ptr_act)
             {
                 UnityTestResultsFailBegin(lineNumber);

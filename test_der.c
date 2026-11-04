@@ -623,7 +623,7 @@ static void test_parse_tlv_nonnull_buffer_zero_size(void)
   uint8_t buf[] = { 0x02 };
   tlv_t actual = {0};
   parse_tlv_status_t parse_result= parse_tlv(buf, 0,&actual);
-  TEST_ASSERT_EQUAL_INT(parse_result,PARSE_TLV_INVALID_ARG);
+  TEST_ASSERT_EQUAL_INT(parse_result,PARSE_TLV_TRUNCATED);
 }
 
 static void test_parse_tlv_null_buffer_positive_size(void)
@@ -638,7 +638,7 @@ static void test_parse_tlv_missing_length(void)
   uint8_t buf[] = { 0x02 };
   tlv_t actual = {0};
   parse_tlv_status_t parse_result= parse_tlv(buf, sizeof(buf),&actual);
-  TEST_ASSERT_EQUAL_INT(parse_result,PARSE_TLV_INVALID_ARG);
+  TEST_ASSERT_EQUAL_INT(parse_result,PARSE_TLV_TRUNCATED);
 }
 
 static void test_parse_tlv_length_of_length_too_large(void)
@@ -646,7 +646,7 @@ static void test_parse_tlv_length_of_length_too_large(void)
   uint8_t buf[] = { 0x04, 0x90 };
   tlv_t actual;
   parse_tlv_status_t status = parse_tlv(buf, sizeof(buf), &actual);
-  TEST_ASSERT_EQUAL_INT(PARSE_TLV_TRUNCATED, status);
+  TEST_ASSERT_EQUAL_INT(PARSE_TLV_INVALID_ENCODING, status);
 }
 
 static void test_parse_tlv_length_of_length_five(void)
@@ -868,6 +868,23 @@ static void test_parse_tlv_output_unchanged_on_failure(void)
   TEST_ASSERT_EQUAL_MEMORY(&before, &actual, sizeof(actual));
 }
 
+static void test_parse_tlv_reject_length_of_length_127(void)
+{
+  uint8_t buf[] = {0x04, 0xFF};
+  tlv_t tlv;
+  parse_tlv_status_t status = parse_tlv(buf, sizeof(buf), &tlv);
+  TEST_ASSERT_EQUAL(PARSE_TLV_INVALID_ENCODING, status);
+}
+
+static void test_parse_tlv_reject_nonminimal_length_octets(void)
+{
+  uint8_t buf[132] = { 0x04, 0x82, 0x00, 0x80 };
+  tlv_t tlv;
+  memset(buf + 4, 0xAA, 128);
+  parse_tlv_status_t status = parse_tlv(buf, sizeof(buf), &tlv);
+  TEST_ASSERT_EQUAL(PARSE_TLV_INVALID_ENCODING, status);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -922,5 +939,7 @@ int main(void)
   RUN_TEST(test_parse_tlv_high_tag_long_form_value_truncated);
   RUN_TEST(test_parse_tlv_length_of_length_five_truncated);
   RUN_TEST(test_parse_tlv_output_unchanged_on_failure);
+  RUN_TEST(test_parse_tlv_reject_length_of_length_127);
+  RUN_TEST(test_parse_tlv_reject_nonminimal_length_octets);
   return UNITY_END();
 }
