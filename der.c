@@ -1,6 +1,20 @@
 #include "der.h"
 #include "integer.h"
 
+enum {
+  TAG_NUMBER_MASK=0x1F,
+  TAG_CLASS_SHIFT=6,
+  TAG_CONSTRUCTED_MASK=0x20,
+  TAG_LENGTH_VALUE_MASK=0x7F,
+  BASE128_BITS_COUNT=7,
+  BASE128_VALUE_MASK=0x7F,
+  BASE128_CONTINUATION_BIT=0x80,
+  TAG_LENGTH_LONG_FORM_BIT=0x80,
+  OCTET_BITS_COUNT=8,
+  SHORT_FORM_MAX_LENGTH=128,
+  MIN_HIGH_TAG_NUMBER=0x1F,
+};
+
 void print_data(const uint8_t *data,size_t len)
 {
   for (size_t i=0;i<len; i++) {
@@ -77,74 +91,59 @@ unsigned min_bitfields(uint32_t n,uint8_t bit_width)
   return (bit_count+bit_width-1)/bit_width;
 }
 
-//TODO:negative integers
-//TODO:check tvl length and buffer size discrepancy
-//TODO:bit string parsing edge cases
-//TODO:check invalid encodings for instance integer cannot be constructed 
-/*
-Tag Byte: 7 6 5 4 3 2 1 0
-          | | |-----------|
-          | |       |
-          | |       +-- Tag number (low 5 bits)
-          | +---------- Primitive / Constructed (bit 6)
-          +------------ Class (bits 7–6)
-*/
-parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
+parse_tlv_status_t der_decode_tag(const uint8_t *buf,size_t size,tag_t *out)
 {
-  if(buf==NULL ||out==NULL){
-    return PARSE_TLV_INVALID_ARG;
-  }
-  if(size<=1) {
-    return PARSE_TLV_TRUNCATED;
-  }
   uint8_t tag_byte = buf[0];
-  tag_t tag={0};
-  tag.class = tag_byte >> 6;
-  tag.type=(tag_byte & 0b00100000)!=0;
-  uint32_t tag_number=tag_byte & 0x1F;
-  size_t len_index=1;
+  out->class = tag_byte >> TAG_CLASS_SHIFT;
+  out->type=(tag_byte & TAG_CONSTRUCTED_MASK)!=0;
+  uint32_t tag_number=tag_byte & TAG_NUMBER_MASK;
+  out->length=1;
   size_t required_header_size;
-  if (tag_number >= 0x1F) {
+  bool has_high_tag_number=(tag_number >= MIN_HIGH_TAG_NUMBER)!=0;
+  if (has_high_tag_number) {
     tag_number=0;
     uint8_t octet;
     do {
-      octet=buf[len_index];
-      if(tag_number>(UINT32_MAX >> 7))
+      octet=buf[out->length];
+      if(tag_number>(UINT32_MAX >> BASE128_BITS_COUNT))
         return PARSE_TLV_INVALID_ENCODING;
-      tag_number=(tag_number << 7);
-      tag_number=tag_number | (octet & 0x7F);
-      len_index++;
-      if(!integer_add_sizet_safe(len_index,1,&required_header_size)){
+      tag_number=(tag_number << BASE128_BITS_COUNT) | (octet & BASE128_VALUE_MASK);
+      out->length++;
+      if(!integer_add_sizet_safe(out->length,1,&required_header_size)){
         return PARSE_TLV_INVALID_ENCODING;
       }
       if(size < required_header_size)
         return PARSE_TLV_TRUNCATED;
-    }while((octet & 0x80)!=0);
+    }while((octet & BASE128_CONTINUATION_BIT)!=0);
   }
-  if(!integer_add_sizet_safe(len_index,1,&required_header_size)){
+  if(!integer_add_sizet_safe(out->length,1,&required_header_size)){
     return PARSE_TLV_INVALID_ENCODING;
   }
   if(size < required_header_size)
     return PARSE_TLV_TRUNCATED;
-  if(tag_number<31 && len_index>1)
+  if(tag_number<MIN_HIGH_TAG_NUMBER && out->length>1)
     return PARSE_TLV_INVALID_ENCODING;
-  if(len_index-1>min_bitfields(tag_number,7))
+  if(out->length-1>min_bitfields(tag_number,BASE128_BITS_COUNT))
     return PARSE_TLV_INVALID_ENCODING;
 
-  tag.number=tag_number;
+  out->number=tag_number;
+  return PARSE_TLV_OK;
+}
 
-  uint8_t len=buf[len_index];
-  size_t bytes=0;
-  uint8_t is_long_form_len=len & (1<<7);
+parse_tlv_status_t der_decode_length(const uint8_t *buf,size_t size,tag_t *tag,der_element_t *out)
+{
+  uint8_t len=buf[tag->length];
+  size_t length_octet_count=0;
+  bool is_long_form_len=(len & TAG_LENGTH_LONG_FORM_BIT);
   uint32_t value_len=0;
   size_t required_size;
   if(is_long_form_len) {
-    bytes = len & 0x7F;
+    length_octet_count = len & TAG_LENGTH_VALUE_MASK;
     //since value_len is uint32_t, it can't hold more than size of uint32_t
-    if(bytes>sizeof(uint32_t)) 
+    if(length_octet_count>sizeof(uint32_t)) 
       return PARSE_TLV_INVALID_ENCODING;
     size_t value_offset;
-    if(!integer_add_sizet_safe(bytes,len_index,&value_offset)){
+    if(!integer_add_sizet_safe(length_octet_count,tag->length,&value_offset)){
       return PARSE_TLV_INVALID_ENCODING;
     }
     if(!integer_add_sizet_safe(value_offset,1,&value_offset)){
@@ -153,29 +152,28 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
     if(size<value_offset)
       return PARSE_TLV_TRUNCATED;
     size_t length_offset;
-    if(!integer_add_sizet_safe(len_index,1,&length_offset)){
+    if(!integer_add_sizet_safe(tag->length,1,&length_offset)){
       return PARSE_TLV_INVALID_ENCODING;
     }
-    for (size_t i=0;i<bytes; i++) {
+    for (size_t i=0;i<length_octet_count; i++) {
       size_t current_offset;
       if(!integer_add_sizet_safe(length_offset,i,&current_offset)){
         return PARSE_TLV_INVALID_ENCODING;
       }
-      value_len |= (uint32_t)buf[current_offset] << (8*(bytes-i-1));
+      value_len |= (uint32_t)buf[current_offset] << (OCTET_BITS_COUNT*(length_octet_count-i-1));
     }
     if(!integer_add_sizet_safe(value_len,value_offset,&required_size)){
       return PARSE_TLV_INVALID_ENCODING;
     }
     if(size<required_size) 
       return PARSE_TLV_TRUNCATED;
-    //DER requires lengths below 128 to use short-form encoding
-    if(value_len<128)
+    if(value_len<SHORT_FORM_MAX_LENGTH)
       return PARSE_TLV_INVALID_ENCODING;
-    if(bytes>min_bitfields(value_len,8))
+    if(length_octet_count>min_bitfields(value_len,OCTET_BITS_COUNT))
       return PARSE_TLV_INVALID_ENCODING;
   }else {
-    value_len = len & 0x7F;
-    if(!integer_add_sizet_safe(value_len,len_index,&required_size)){
+    value_len = len & TAG_LENGTH_VALUE_MASK;
+    if(!integer_add_sizet_safe(value_len,tag->length,&required_size)){
       return PARSE_TLV_INVALID_ENCODING;
     }
     if(!integer_add_sizet_safe(required_size,1,&required_size)){
@@ -186,13 +184,13 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
   }
   size_t value_index;
   size_t total_header_len;
-  if(!integer_add_sizet_safe(len_index,1,&value_index)){
+  if(!integer_add_sizet_safe(tag->length,1,&value_index)){
     return PARSE_TLV_INVALID_ENCODING;
   }
-  if(!integer_add_sizet_safe(bytes,value_index,&total_header_len)){
+  if(!integer_add_sizet_safe(length_octet_count,value_index,&total_header_len)){
     return PARSE_TLV_INVALID_ENCODING;
   }
-  out->tag=tag;
+  out->tag=*tag;
   out->value_len=value_len;
   if(out->value_len>0){
     out->value=buf+total_header_len;
@@ -206,7 +204,38 @@ parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out)
   return PARSE_TLV_OK;
 }
 
-tlv_node_t* create_node(tlv_t t)
+
+//TODO:negative integers
+//TODO:check tvl length and buffer size discrepancy
+//TODO:bit string parsing edge cases
+//TODO:check invalid encodings for instance integer cannot be constructed 
+/*
+Tag Byte: 7 6 5 4 3 2 1 0
+          | | |-----------|
+          | |       |
+          | |       +-- Tag number (low 5 bits)
+          | +---------- Primitive / Constructed (bit 6)
+          +------------ Class (bits 7–6)
+*/
+parse_tlv_status_t der_decode_element(const uint8_t *buf,size_t size,der_element_t *out)
+{
+  if(buf==NULL ||out==NULL){
+    return PARSE_TLV_INVALID_ARG;
+  }
+  if(size<=1) {
+    return PARSE_TLV_TRUNCATED;
+  }
+  tag_t tag={0};
+  parse_tlv_status_t tag_parse_status=der_decode_tag(buf,size,&tag);
+  if(tag_parse_status!=PARSE_TLV_OK)
+    return tag_parse_status;
+  parse_tlv_status_t length_parse_status=der_decode_length(buf,size,&tag,out);
+  if(length_parse_status!=PARSE_TLV_OK)
+    return length_parse_status;
+  return PARSE_TLV_OK;
+}
+
+tlv_node_t* create_node(der_element_t t)
 {
   tlv_node_t *node=calloc(1,sizeof(*node));
   node->tlv=t;
@@ -223,7 +252,7 @@ void add_node(tlv_node_t *parent, tlv_node_t *child)
 
 
 //TODO:check child length cannot be greater than parent length
-tlv_node_t* build_tlv(tlv_t tlv)
+tlv_node_t* build_tlv(der_element_t tlv)
 {
   tlv_node_t* node=create_node(tlv);
   size_t len=tlv.value_len;
@@ -231,8 +260,8 @@ tlv_node_t* build_tlv(tlv_t tlv)
   if (tlv.tag.type == CONSTRUCTED) {
     size_t count=node->count;
     while(value_ptr!=NULL && value_ptr < tlv.value+tlv.value_len-1) {
-      tlv_t child = {0};
-      parse_tlv_status_t parse_result= parse_tlv(value_ptr,len,&child);
+      der_element_t child = {0};
+      parse_tlv_status_t parse_result= der_decode_element(value_ptr,len,&child);
       if(parse_result!=PARSE_TLV_OK) {
         return NULL;
       }

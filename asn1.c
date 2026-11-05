@@ -1326,8 +1326,8 @@ void decode_basic_constraints(field_value_t *fv)
       char *oid_str =oid_to_str(oid);
       if(strcmp(oid_str,"2.5.29.19")==0) {
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_basic_constraints,root,&out);
         if(is_valid){
@@ -1336,8 +1336,8 @@ void decode_basic_constraints(field_value_t *fv)
       }
       if(strcmp(oid_str,"2.5.29.35")==0) {
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_identifier,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_identifier,out);
@@ -1348,8 +1348,8 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.15")==0) {
         field_t *field_key_usage=x509_extensions_key_usage_definition();
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_key_usage,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_usage,out);
@@ -1360,8 +1360,8 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.37")==0) {
         field_t *field_ext_key_usage=x509_extensions_extended_key_usage_definition();
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_ext_key_usage,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_ext_key_usage,out);
@@ -1372,8 +1372,8 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.17")==0) {
         field_t *field_san=x509_san_definition();
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_san,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_san,out);
@@ -1384,8 +1384,8 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"1.3.6.1.5.5.7.1.1")==0) {
         field_t *field_auth_info_access=x509_extensions_authority_info_access();
         field_value_t *out=NULL;
-        tlv_t actual = {0};
-        parse_tlv_status_t parse_result= parse_tlv(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
+        der_element_t actual = {0};
+        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
         tlv_node_t *root = build_tlv(actual);
         bool is_valid=validate_schema(field_auth_info_access,root,&out);
         print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_auth_info_access,out);

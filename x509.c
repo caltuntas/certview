@@ -124,8 +124,8 @@ certificate_t *x509_create_from_asn1(field_value_t *root)
     field_t *field_ecdsa_sig=x509_ecdsa_sig_value();
     field_value_t *out=NULL;
     uint8_t *buf=signatureNode->value.bitstring->data;
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf+1,signatureNode->tlv->tlv.value_len-1,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf+1,signatureNode->tlv->tlv.value_len-1,&actual);
     tlv_node_t *root = build_tlv(actual);
     bool is_valid=validate_schema(field_ecdsa_sig,root,&out);
     if(is_valid){

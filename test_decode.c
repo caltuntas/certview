@@ -39,8 +39,8 @@ static void test_decode_integer()
 
   uint8_t buf[] = {0x30,0x03,0x02,0x01,0x01};
   int len = ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *root = build_tlv(actual);
   field_value_t *out=NULL;
   bool is_valid = validate_schema(&parent, root,&out);
@@ -70,8 +70,8 @@ static void test_decode_oid()
 
   uint8_t buf[] = {0x30,0x0B,0x06,0x09,0x2A,0x82,0x48,0x87,0xBA,0x4D,0x01,0x01,0x01};
   int len = ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *root = build_tlv(actual);
   field_value_t *out=NULL;
   bool is_valid = validate_schema(&parent, root,&out);
@@ -101,8 +101,8 @@ static void test_decode_bit_string()
 
   uint8_t buf[] = {0x30,0x05,0x03,0x03,0x03,0x6F,0xE0};
   int len = ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *root = build_tlv(actual);
   field_value_t *out=NULL;
   bool is_valid = validate_schema(&parent, root,&out);
@@ -135,8 +135,8 @@ static void test_decode_octet_string()
 
   uint8_t buf[] = {0x30,0x0B,0x04,0x09,0x68,0x65,0x6C,0x6C,0x6F,0x2E,0x63,0x6F,0x6D};
   int len = ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *root = build_tlv(actual);
   field_value_t *out=NULL;
   bool is_valid = validate_schema(&parent, root,&out);
@@ -179,8 +179,8 @@ static void test_decode_custom_octet_string()
 
   uint8_t buf[] = {0x30,0x0C,0x06,0x03,0x55,0x1D,0x13,0x01,0x01,0xFF,0x04,0x02,0x30,0x00};
   int len = ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *root = build_tlv(actual);
   field_value_t *out=NULL;
   bool is_valid = validate_schema(&extension, root,&out);

@@ -76,8 +76,8 @@ static void test_oid_only(void)
 
   uint8_t buf[]={0x30,0x0A,0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x04,0x03,0x02};
   size_t len=ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *root =build_tlv(actual);
 
   field_value_t *out=NULL;
@@ -110,8 +110,8 @@ static void test_invalid_null_first(void)
 
   uint8_t buf[]={0x30,0x0C,0x05,0x00,0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x04,0x03,0x02};
   size_t len=ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *root =build_tlv(actual);
 
   field_value_t *out=NULL;
@@ -162,8 +162,8 @@ static void test_validate(void)
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
 
     char msg[40];
@@ -225,8 +225,8 @@ static void test_validate_explicit(void)
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
@@ -297,8 +297,8 @@ static void test_validate_implicit(void)
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
@@ -379,8 +379,8 @@ static void test_validate_implicit_sequence(void)
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
@@ -466,8 +466,8 @@ static void test_validate_explicit_sequence(void)
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual={0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual={0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root=build_tlv(actual);
 
     char msg[40]={0};
@@ -558,8 +558,8 @@ static void test_validate_choice()
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
@@ -641,8 +641,8 @@ static void test_validate_nested_fields()
   int len = ARRAY_LEN(cases);
   for (int i=0; i<len; i++) {
     test_case tc=cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root =build_tlv(actual);
     char msg[40]={0};
     snprintf(msg,20,"case=%d\n",i);
@@ -685,8 +685,8 @@ static void test_validate_sequence_of()
   int len = ARRAY_LEN(cases);
   for (int i = 0; i < len; i++) {
     test_case tc = cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
@@ -756,8 +756,8 @@ static void test_validate_set()
   int len = ARRAY_LEN(cases);
   for (int i = 0; i < len; i++) {
     test_case tc = cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
@@ -953,8 +953,8 @@ static void test_validate_complex()
   int len = ARRAY_LEN(cases);
   for (int i = 0; i < len; i++) {
     test_case tc = cases[i];
-    tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(tc.data,tc.len,&actual);
+    der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(tc.data,tc.len,&actual);
     tlv_node_t *root = build_tlv(actual);
     char msg[40] = {0};
     snprintf(msg, 20, "case=%d\n", i);
@@ -995,8 +995,8 @@ static void test_bind_sequence()
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
 
   size_t len=ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1047,8 +1047,8 @@ static void test_bind_sequence_with_optional()
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x03};
 
   size_t len=ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1102,8 +1102,8 @@ static void test_bind_sequence_with_default()
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x03};
 
   size_t len=ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1148,8 +1148,8 @@ static void test_bind_choice()
   uint8_t buf[]={0x02,0x01,0x05};
 
   size_t len=ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1207,8 +1207,8 @@ static void test_bind_choice_with_sequence()
   uint8_t buf[]={0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
 
   size_t len=ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1254,8 +1254,8 @@ static void test_bind_choice_with_explicit()
 
   uint8_t buf[]={0xA1,0x03,0x02,0x01,0x05};
   size_t len=ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&value);
@@ -1332,8 +1332,8 @@ static void test_bind_implicit_sequence(void)
   uint8_t buf[]={0x30,0x0B,0x02,0x01,0x05,0xA0,0x06,0x01,0x01,0xFF,0x02,0x01,0x2A};
 
   int len = ARRAY_LEN(buf);
- tlv_t actual={0};
- parse_tlv_status_t parse_result = parse_tlv(buf,len,&actual);
+ der_element_t actual={0};
+ parse_tlv_status_t parse_result = der_decode_element(buf,len,&actual);
   tlv_node_t *root =build_tlv(actual);
   field_value_t *value=NULL;
   bool is_valid=validate_schema(&parent_field,root,&value);
@@ -1411,8 +1411,8 @@ static void test_bind_validity_choice_utctime()
 
   size_t len = ARRAY_LEN(buf);
 
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
 
   field_value_t *value = NULL;
@@ -1471,8 +1471,8 @@ static void test_explicit_any_consumption()
   uint8_t buf[] = {0x30,0x0E,0x02,0x01,0x01,0xA3,0x07,0x30,0x05,0x02,0x01,0x2A,0x02,0x00,0x02,0x01,0x02 };
   size_t len = ARRAY_LEN(buf);
 
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
 
   field_value_t *value = NULL;
@@ -1508,8 +1508,8 @@ static void test_bind_simple_bit_string()
   uint8_t buf[]={0x03,0x02,0x07,0x80};
 
   size_t len=ARRAY_LEN(buf);
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
   field_value_t *binding=NULL;
   bool is_valid = validate_schema(&parent, tlv_root,&binding);
@@ -1698,8 +1698,8 @@ static void test_bind_complex()
   uint8_t buf[] = {0x30,0x10,0x02,0x01,0x01,0xA1,0x0B,0x01,0x01,0xFF,0x30,0x06,0x02,0x01,0x01,0x02,0x01,0x02};
   size_t len = ARRAY_LEN(buf);
 
-  tlv_t actual = {0};
-    parse_tlv_status_t parse_result= parse_tlv(buf,len,&actual);
+  der_element_t actual = {0};
+    parse_tlv_status_t parse_result= der_decode_element(buf,len,&actual);
   tlv_node_t *tlv_root = build_tlv(actual);
 
   field_value_t *value = NULL;

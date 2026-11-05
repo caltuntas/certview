@@ -1,6 +1,6 @@
 CFLAGS = -g -Wall -Wextra -Wconversion -Wsign-conversion
 all:
-	gcc $(CFLAGS) main.c der.c asn1.c oid.c bigint.c x509.c -o certview
+	gcc $(CFLAGS) main.c der.c asn1.c oid.c bigint.c x509.c integer.c -o certview
 
 test:
 	gcc $(CFLAGS) test-framework/unity.c der.c integer.c test_der.c -o test_der.out

@@ -76,6 +76,7 @@ typedef struct {
   class_t class;
   type_t type;
   tag_number_t number;
+	size_t length;
 } tag_t;
 
 typedef struct {
@@ -84,17 +85,17 @@ typedef struct {
   size_t header_len;
   const uint8_t *start;
   const uint8_t *value;
-} tlv_t;
+} der_element_t;
 
 
 typedef struct tlv_node_t {
-  tlv_t tlv;
+  der_element_t tlv;
   struct tlv_node_t **children;
   size_t count;
 } tlv_node_t;
 
-parse_tlv_status_t parse_tlv(const uint8_t *buf,size_t size,tlv_t *out);
-tlv_node_t* build_tlv(tlv_t tlv);
+parse_tlv_status_t der_decode_element(const uint8_t *buf,size_t size,der_element_t *out);
+tlv_node_t* build_tlv(der_element_t tlv);
 void print_tlv_node(tlv_node_t *node,int indent);
 void print_node_values(tlv_node_t *node,int indent);
 void print_data(const uint8_t *data,size_t len);
