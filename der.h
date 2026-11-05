@@ -76,7 +76,7 @@ typedef struct {
   class_t class;
   type_t type;
   tag_number_t number;
-	size_t length;
+	size_t encoded_size;
 } tag_t;
 
 typedef struct {
