@@ -892,6 +892,14 @@ static void test_der_decode_element_truncated_long_form_length(void)
   TEST_ASSERT_EQUAL(PARSE_TLV_TRUNCATED, status);
 }
 
+static void test_der_decode_element_rejects_indefinite_length(void)
+{
+  uint8_t buf[] = { 0x04, 0x80 };
+  der_element_t element;
+  parse_tlv_status_t status =der_decode_element(buf, sizeof(buf), &element);
+  TEST_ASSERT_EQUAL(PARSE_TLV_INVALID_ENCODING, status);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
@@ -949,5 +957,6 @@ int main(void)
   RUN_TEST(test_parse_tlv_reject_length_of_length_127);
   RUN_TEST(test_parse_tlv_reject_nonminimal_length_octets);
   RUN_TEST(test_der_decode_element_truncated_long_form_length);
+  RUN_TEST(test_der_decode_element_rejects_indefinite_length);
   return UNITY_END();
 }
