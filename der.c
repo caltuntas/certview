@@ -15,6 +15,7 @@ enum {
   MIN_HIGH_TAG_NUMBER=0x1F,
   DER_LENGTH_INITIAL_OCTETS=1,
   DER_TAG_INITIAL_OCTETS=1,
+  DER_NODE_INITIAL_CAPACITY=16,
 };
 
 void print_data(const uint8_t *data,size_t len)
@@ -162,31 +163,56 @@ decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,de
   return DECODE_DER_ELEMENT_STATUS_OK;
 }
 
-static der_element_node_t* der_element_node_create(der_element_t t)
+static der_element_node_t* der_element_node_create(der_element_t element)
 {
   der_element_node_t *node=calloc(1,sizeof(*node));
-  node->element=t;
+  if(node==NULL)
+    return NULL;
+  node->element=element;
+  node->capacity=0;
+  node->count=0;
   return node;
 }
 
-static void der_element_node_add_child(der_element_node_t *parent, der_element_node_t *child)
+static bool der_element_node_add_child(der_element_node_t *parent, der_element_node_t *child)
 {
+  if(parent->count>=parent->capacity){
+    size_t new_capacity=0;
+    if(parent->capacity==0)
+      new_capacity=DER_NODE_INITIAL_CAPACITY;
+    else {
+      if(parent->capacity<(SIZE_MAX/2))
+        new_capacity=parent->capacity*2;
+      else
+        return false;
+    }
+    der_element_node_t **tmp=NULL;
+    if(new_capacity<(SIZE_MAX/sizeof(der_element_node_t*)))
+      tmp=realloc(parent->children,sizeof(der_element_node_t*)*new_capacity);
+    else
+      return false;
+    if(tmp==NULL)
+      return false;
+    parent->children=tmp;
+    parent->capacity=new_capacity;
+  }
   size_t cnt=parent->count;
-  parent->children=realloc(parent->children,sizeof(der_element_node_t*)*(parent->count+1));
   parent->children[cnt]=child;
   parent->count+=1;
+  return true;
 }
 
 
 //TODO:check child length cannot be greater than parent length
-der_element_node_t* der_element_tree_build(der_element_t tlv)
+der_element_node_t* der_element_tree_build(der_element_t element)
 {
-  der_element_node_t* node=der_element_node_create(tlv);
-  size_t len=tlv.value_len;
-  const uint8_t *value_ptr = tlv.value;
-  if (tlv.tag.type == CONSTRUCTED) {
-    size_t count=node->count;
-    while(value_ptr!=NULL && value_ptr < tlv.value+tlv.value_len-1) {
+  der_element_node_t* node=der_element_node_create(element);
+  if(node==NULL)
+    return NULL;
+  size_t len=element.value_len;
+  const uint8_t *value_ptr = element.value;
+  if (element.tag.type == CONSTRUCTED) {
+    while(value_ptr!=NULL && value_ptr < element.value+element.value_len-1) {
       der_element_t child = {0};
       decode_der_element_status_t parse_result= der_element_decode(value_ptr,len,&child);
       if(parse_result!=DECODE_DER_ELEMENT_STATUS_OK) {
@@ -196,21 +222,14 @@ der_element_node_t* der_element_tree_build(der_element_t tlv)
       if(childNode==NULL) {
         return NULL;
       }
-      der_element_node_add_child(node,childNode);
+      bool add_child_res=der_element_node_add_child(node,childNode);
+      if(add_child_res==false)
+        return NULL;
       if(childNode->element.value==NULL && childNode->element.value_len==0)
         value_ptr=value_ptr+2;
       else
-        value_ptr=node->children[count]->element.value+node->children[count]->element.value_len;
-      //len=child.value_len;
-      count++;
-      node->count=count;
+        value_ptr=childNode->element.value+childNode->element.value_len;
     }
-  } else if (tlv.tag.type == PRIMITIVE) {
-    node->element.tag.class = tlv.tag.class;
-    node->element.tag.number = tlv.tag.number;
-    node->element.tag.type = tlv.tag.type;
-    node->element.value_len= tlv.value_len;
-    node->element.value= tlv.value;
-  }
+  } 
   return node;
 }

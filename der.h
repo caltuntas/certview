@@ -92,6 +92,7 @@ typedef struct der_element_node_t {
   der_element_t element;
   struct der_element_node_t **children;
   size_t count;
+  size_t capacity;
 } der_element_node_t;
 
 decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,der_element_t *out);
