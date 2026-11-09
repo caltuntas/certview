@@ -48,7 +48,7 @@ typedef struct field_t {
 
 typedef struct field_value_t {
   field_t *field;
-  tlv_node_t *tlv;
+  der_element_node_t *tlv;
   size_t count;
   struct field_value_t *parent;
   struct field_value_t **children;
@@ -71,9 +71,9 @@ typedef struct {
 void print_field(field_t *field,int indent);
 void print_field_value(field_value_t *value,int indent);
 void add_field(field_t *parent, field_t *child);
-bool validate_schema(field_t *parent,tlv_node_t *tlv,field_value_t **out);
+bool validate_schema(field_t *parent,der_element_node_t *tlv,field_value_t **out);
 field_t* create_x509_definition();
-void print_debug(bool valid, const uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value);
+void print_debug(bool valid, const uint8_t *data,size_t data_len,der_element_node_t *node,field_t *field, field_value_t *value);
 void decode(field_value_t *value,decoder_t *decoder);
 bit_string_t *bit_string_create(const uint8_t *buf,size_t len);
 char *bit_string_to_str(bit_string_t *bitstring);

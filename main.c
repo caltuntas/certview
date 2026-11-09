@@ -167,8 +167,8 @@ int main(int argc, char **argv)
   fclose(file);
 
   der_element_t tlv={0};
-  parse_tlv_status_t parse_result= der_decode_element(buffer,len,&tlv);
-  tlv_node_t *root =build_tlv(tlv);
+  decode_der_element_status_t parse_result= der_element_decode(buffer,len,&tlv);
+  der_element_node_t *root =der_element_tree_build(tlv);
   field_t *parent=create_x509_definition();
 
   field_value_t *mapping=NULL;

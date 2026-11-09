@@ -54,7 +54,7 @@ void add_field_value(field_value_t *parent, field_value_t *child)
   child->parent=parent;
 }
 
-field_value_t* create_field_value(field_t *f, tlv_node_t *t)
+field_value_t* create_field_value(field_t *f, der_element_node_t *t)
 {
   field_value_t *child=calloc(1,sizeof(field_value_t));
   if(f->parent && f->parent->value_type==REFERENCE_TYPE)
@@ -93,7 +93,7 @@ field_t* create_field()
 
 //TODO:while recursively validating and mapping fields, this function is called multiple time
 //but who should call it is inconsistent, private types or constructed types , ownership check
-void create_add_field_value(field_value_t *parent, field_t *f, tlv_node_t *t)
+void create_add_field_value(field_value_t *parent, field_t *f, der_element_node_t *t)
 {
   if(f->value_type!=REFERENCE_TYPE) {
     field_value_t *cv=create_field_value(f,t);
@@ -168,28 +168,27 @@ void print_field_value(field_value_t *value,int indent)
     printf("[");
 
     if(value->field->value_type==ANY && value->tlv){
-      const char *type_str=type_t_toString(value->tlv->tlv.tag.type);
-      const char *class_str=class_t_toString(value->tlv->tlv.tag.class);
-      const char *tag_number_str=tag_number_t_toString(value->tlv->tlv.tag.number);
+      const char *type_str=type_t_toString(value->tlv->element.tag.type);
+      const char *class_str=class_t_toString(value->tlv->element.tag.class);
+      const char *tag_number_str=tag_number_t_toString(value->tlv->element.tag.number);
       printf("%s ",tag_number_str);
     }
 
     if(value->tlv==NULL) {
       printf("omitted");
     }else if (value->tlv->count <= 0 && value->field->value_type!=CHOICE) {
-      for(int i=0; i<value->tlv->tlv.value_len; i++) {
-        printf("%02X,",*(value->tlv->tlv.value+i));
+      for(int i=0; i<value->tlv->element.value_len; i++) {
+        printf("%02X,",*(value->tlv->element.value+i));
       }
     } else if(value->field->value_type!=CHOICE && value->field->pc!=CONSTRUCTED && value->tlv && value->tlv->count>0){
-      tlv_node_t *node=value->tlv->children[0];
-      for(int i=0; i<node->tlv.value_len; i++) {
-        printf("%02X,",*(node->tlv.value+i));
+      der_element_node_t *node=value->tlv->children[0];
+      for(int i=0; i<node->element.value_len; i++) {
+        printf("%02X,",*(node->element.value+i));
       }
-      //print_node_values(value->tlv,0);
     }
     else {
-      for(int i=value->tlv->tlv.header_len+2; i>0; i--) {
-        printf("%02X,",*(value->tlv->tlv.value-i));
+      for(int i=value->tlv->element.header_len+2; i>0; i--) {
+        printf("%02X,",*(value->tlv->element.value-i));
       }
     }
     printf("]");
@@ -228,7 +227,7 @@ void print_field_value(field_value_t *value,int indent)
     printf("%*s }\n",indent,"");
   }
 }
-field_value_t *set_or_add_field_value(field_t *field,tlv_node_t *tlv,field_value_t **out)
+field_value_t *set_or_add_field_value(field_t *field,der_element_node_t *tlv,field_value_t **out)
 {
   field_value_t *parent_value=create_field_value(field,tlv);
   if(*out==NULL){
@@ -241,7 +240,7 @@ field_value_t *set_or_add_field_value(field_t *field,tlv_node_t *tlv,field_value
 }
 
 //TODO:handle primitive type mapping, example standalone integer,string etc.
-bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
+bool validate_schema(field_t *field,der_element_node_t *tlv,field_value_t **out)
 {
   if(field->required && tlv==NULL)
     return false;
@@ -270,18 +269,18 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
   }else if(field->value_type==ANY){
     //TODO:duplicated implicit and explicit checks are everywhere
     if(field->encoding_type==IMPLICIT || field->encoding_type==EXPLICIT) {
-      if(field->tag_number!=tlv->tlv.tag.number)
+      if(field->tag_number!=tlv->element.tag.number)
         return false;
     }
   }else {
-    tag_t t=tlv->tlv.tag;
+    tag_t t=tlv->element.tag;
     if(field->pc==PRIMITIVE){
       if(field->encoding_type==EXPLICIT) {
 
         if(tlv->count<=0) 
           return false;
-        tlv_node_t *child=tlv->children[0];
-        if(child->tlv.tag.number!=field->value_type)
+        der_element_node_t *child=tlv->children[0];
+        if(child->element.tag.number!=field->value_type)
           return false;
         if(field->tag_number!=t.number)
           return false;
@@ -309,11 +308,11 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
       }else if (field->encoding_type==EXPLICIT){
         if(tlv->count<=0) 
           return false;
-        if(field->tag_number!=tlv->tlv.tag.number)
+        if(field->tag_number!=tlv->element.tag.number)
           return false;
         tlv=tlv->children[0];
       }else{
-        if(field->value_type!=tlv->tlv.tag.number)
+        if(field->value_type!=tlv->element.tag.number)
           return false;
       }
       field_value_t *parent_value=set_or_add_field_value(field,tlv,out);
@@ -322,11 +321,11 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
         if(field->element_type!=0){
           if(tlv->count<=0)
             return false;
-          if(field->value_type!=tlv->tlv.tag.number)
+          if(field->value_type!=tlv->element.tag.number)
             return false;
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
-            tlv_node_t *item=tlv->children[i];
+            der_element_node_t *item=tlv->children[i];
             if (validate_schema(item_field,item,&parent_value)==false){
               return false;
             } else {
@@ -340,7 +339,7 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
           int tlv_index=0;
           for (int i=0; i<field->count; i++) {
             field_t *f=field->children[i];
-            tlv_node_t* tn=NULL;
+            der_element_node_t* tn=NULL;
             if(tlv->count>0 && tlv_index<tlv->count)
               tn=tlv->children[tlv_index];
             int required_count=0;
@@ -386,11 +385,11 @@ bool validate_schema(field_t *field,tlv_node_t *tlv,field_value_t **out)
         if(field->element_type!=0){
           if(field->required && tlv->count<=0)
             return false;
-          if(field->value_type!=tlv->tlv.tag.number)
+          if(field->value_type!=tlv->element.tag.number)
             return false;
           field_t *item_field=field->children[0];
           for (int i=0; i<tlv->count; i++) {
-            tlv_node_t *item=tlv->children[i];
+            der_element_node_t *item=tlv->children[i];
             if (validate_schema(item_field,item,&parent_value)==false)
               return false;
             else {
@@ -758,7 +757,7 @@ field_t* create_x509_definition()
   return certificate;
 }
 
-void print_debug(bool valid, const uint8_t *data,size_t data_len,tlv_node_t *node,field_t *field, field_value_t *value)
+void print_debug(bool valid, const uint8_t *data,size_t data_len,der_element_node_t *node,field_t *field, field_value_t *value)
 {
   if(node==NULL)
     return;
@@ -771,7 +770,7 @@ void print_debug(bool valid, const uint8_t *data,size_t data_len,tlv_node_t *nod
   print_data(data,data_len);
   printf("\n");
   printf("---Parsed Der---\n");
-  print_tlv_node(node,0);
+  print_der_element_node(node,0);
   if(valid){
     printf("\n");
     printf("---Mapped Values---\n");
@@ -793,10 +792,10 @@ void decode(field_value_t *value,decoder_t *decoder)
       if(value->tlv!=NULL){
         //TODO:check IMPLICIT encoding
         if(value->field->encoding_type==EXPLICIT){
-          tlv_node_t *tlv=value->tlv->children[0];
-          value->value.bigint=create_bigint(tlv->tlv.value,tlv->tlv.value_len);      
+          der_element_node_t *tlv=value->tlv->children[0];
+          value->value.bigint=create_bigint(tlv->element.value,tlv->element.value_len);      
         }else {
-          value->value.bigint=create_bigint(value->tlv->tlv.value,value->tlv->tlv.value_len);      
+          value->value.bigint=create_bigint(value->tlv->element.value,value->tlv->element.value_len);      
         }
       }else{
         value->value.bigint=NULL;      
@@ -804,28 +803,28 @@ void decode(field_value_t *value,decoder_t *decoder)
       value->decoded=true;
     }
     if(value->field->value_type==OBJECT_IDENTIFIER) {
-      value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
+      value->value.oid=oid_create(value->tlv->element.value,value->tlv->element.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==BIT_STRING) {
-      value->value.bitstring=bit_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
+      value->value.bitstring=bit_string_create(value->tlv->element.value,value->tlv->element.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==IA5String) {
-      value->value.ia5string=ia5_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
+      value->value.ia5string=ia5_string_create(value->tlv->element.value,value->tlv->element.value_len);
       value->decoded=true;
     }
     if(value->field->value_type==OCTET_STRING) {
       if(decoder!=NULL) {
         decoder->decoder_func(value);
       } else {
-        value->value.octetstring=octet_string_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
+        value->value.octetstring=octet_string_create(value->tlv->element.value,value->tlv->element.value_len);
         value->decoded=true;
       }
     }
     if(value->field->value_type==ANY){
-      if(value->tlv!=NULL && value->tlv->tlv.tag.number==OBJECT_IDENTIFIER) {
-        value->value.oid=oid_create(value->tlv->tlv.value,value->tlv->tlv.value_len);
+      if(value->tlv!=NULL && value->tlv->element.tag.number==OBJECT_IDENTIFIER) {
+        value->value.oid=oid_create(value->tlv->element.value,value->tlv->element.value_len);
         value->decoded=true;
       }
     }
@@ -1327,8 +1326,8 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.19")==0) {
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_basic_constraints,root,&out);
         if(is_valid){
           add_field_value(fv,out);
@@ -1337,10 +1336,10 @@ void decode_basic_constraints(field_value_t *fv)
       if(strcmp(oid_str,"2.5.29.35")==0) {
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_key_identifier,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_identifier,out);
+        print_debug(is_valid,fv->tlv->element.value,fv->tlv->element.value_len,root,field_key_identifier,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1349,10 +1348,10 @@ void decode_basic_constraints(field_value_t *fv)
         field_t *field_key_usage=x509_extensions_key_usage_definition();
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_key_usage,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_key_usage,out);
+        print_debug(is_valid,fv->tlv->element.value,fv->tlv->element.value_len,root,field_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1361,10 +1360,10 @@ void decode_basic_constraints(field_value_t *fv)
         field_t *field_ext_key_usage=x509_extensions_extended_key_usage_definition();
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_ext_key_usage,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_ext_key_usage,out);
+        print_debug(is_valid,fv->tlv->element.value,fv->tlv->element.value_len,root,field_ext_key_usage,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1373,10 +1372,10 @@ void decode_basic_constraints(field_value_t *fv)
         field_t *field_san=x509_san_definition();
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_san,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_san,out);
+        print_debug(is_valid,fv->tlv->element.value,fv->tlv->element.value_len,root,field_san,out);
         if(is_valid){
           add_field_value(fv,out);
         }
@@ -1385,10 +1384,10 @@ void decode_basic_constraints(field_value_t *fv)
         field_t *field_auth_info_access=x509_extensions_authority_info_access();
         field_value_t *out=NULL;
         der_element_t actual = {0};
-        parse_tlv_status_t parse_result= der_decode_element(fv->tlv->tlv.value,fv->tlv->tlv.value_len,&actual);
-        tlv_node_t *root = build_tlv(actual);
+        decode_der_element_status_t parse_result= der_element_decode(fv->tlv->element.value,fv->tlv->element.value_len,&actual);
+        der_element_node_t *root = der_element_tree_build(actual);
         bool is_valid=validate_schema(field_auth_info_access,root,&out);
-        print_debug(is_valid,fv->tlv->tlv.value,fv->tlv->tlv.value_len,root,field_auth_info_access,out);
+        print_debug(is_valid,fv->tlv->element.value,fv->tlv->element.value_len,root,field_auth_info_access,out);
         if(is_valid){
           add_field_value(fv,out);
         }

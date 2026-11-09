@@ -65,12 +65,12 @@ ENUM_DEFINE_TO_STRING(ENUM_type, type_t)
 ENUM_DECLARE(ENUM_tag_number, tag_number_t)
 ENUM_DEFINE_TO_STRING(ENUM_tag_number, tag_number_t)
 
-typedef enum parse_tlv_status_t {
-  PARSE_TLV_OK,
-  PARSE_TLV_INVALID_ARG,
-  PARSE_TLV_INVALID_ENCODING,
-  PARSE_TLV_TRUNCATED,
-} parse_tlv_status_t;
+typedef enum decode_der_element_status_t {
+  DECODE_DER_ELEMENT_STATUS_OK,
+  DECODE_DER_ELEMENT_INVALID_ARG,
+  DECODE_DER_ELEMENT_INVALID_ENCODING,
+  DECODE_DER_ELEMENT_TRUNCATED,
+} decode_der_element_status_t;
 
 typedef struct {
   class_t class;
@@ -88,16 +88,15 @@ typedef struct {
 } der_element_t;
 
 
-typedef struct tlv_node_t {
-  der_element_t tlv;
-  struct tlv_node_t **children;
+typedef struct der_element_node_t {
+  der_element_t element;
+  struct der_element_node_t **children;
   size_t count;
-} tlv_node_t;
+} der_element_node_t;
 
-parse_tlv_status_t der_decode_element(const uint8_t *buf,size_t size,der_element_t *out);
-tlv_node_t* build_tlv(der_element_t tlv);
-void print_tlv_node(tlv_node_t *node,int indent);
-void print_node_values(tlv_node_t *node,int indent);
+decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,der_element_t *out);
+der_element_node_t* der_element_tree_build(der_element_t element);
+void print_der_element_node(der_element_node_t *node,int indent);
 void print_data(const uint8_t *data,size_t len);
 
 #endif
