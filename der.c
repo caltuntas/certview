@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "der.h"
 #include "integer.h"
 
@@ -71,6 +72,9 @@ static unsigned min_bitfields(uint32_t n,uint8_t bit_width)
 
 static decode_der_element_status_t der_element_decode_tag(const uint8_t *buf,size_t size,tag_t *out)
 {
+  assert(buf!=NULL);
+  assert(out!=NULL);
+  assert(size!=0);
   uint8_t tag_byte = buf[0];
   uint8_t tag_class=tag_byte >> TAG_CLASS_SHIFT;
   uint8_t tag_type=(tag_byte & TAG_CONSTRUCTED_MASK)!=0;
@@ -106,16 +110,18 @@ static decode_der_element_status_t der_element_decode_tag(const uint8_t *buf,siz
 
 static decode_der_element_status_t der_element_decode_length(const uint8_t *buf,size_t size,tag_t *tag, size_t *length_octet_count, uint32_t *value_len)
 {
+  assert(buf!=NULL);
+  assert(tag!=NULL);
+  assert(length_octet_count!=NULL);
+  assert(value_len!=NULL);
   uint8_t len_octet=buf[tag->encoded_size];
   bool is_long_form_len=(len_octet & TAG_LENGTH_LONG_FORM_BIT);
   uint32_t decoded_value_len = 0;
   size_t encoded_length_size=0;
   if(is_long_form_len) {
     encoded_length_size= len_octet & TAG_LENGTH_VALUE_MASK;
-    //since value_len is uint32_t, it can't hold more than size of uint32_t
     if(encoded_length_size>sizeof(decoded_value_len)) 
       return DECODE_DER_ELEMENT_INVALID_ENCODING;
-    //indefinite length isn't allowed in DER in the long form
     if(encoded_length_size==0)
       return DECODE_DER_ELEMENT_INVALID_ENCODING;
     size_t length_offset=tag->encoded_size+DER_LENGTH_INITIAL_OCTETS;
@@ -143,14 +149,14 @@ decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,de
   if(size<=1)
     return DECODE_DER_ELEMENT_TRUNCATED;
   tag_t tag={0};
-  decode_der_element_status_t tag_parse_status=der_element_decode_tag(buf,size,&tag);
-  if(tag_parse_status!=DECODE_DER_ELEMENT_STATUS_OK)
-    return tag_parse_status;
+  decode_der_element_status_t tag_decode_status=der_element_decode_tag(buf,size,&tag);
+  if(tag_decode_status!=DECODE_DER_ELEMENT_STATUS_OK)
+    return tag_decode_status;
   size_t encoded_length_size;
   uint32_t value_len;
-  decode_der_element_status_t length_parse_status=der_element_decode_length(buf,size,&tag,&encoded_length_size,&value_len);
-  if(length_parse_status!=DECODE_DER_ELEMENT_STATUS_OK)
-    return length_parse_status;
+  decode_der_element_status_t length_decode_status=der_element_decode_length(buf,size,&tag,&encoded_length_size,&value_len);
+  if(length_decode_status!=DECODE_DER_ELEMENT_STATUS_OK)
+    return length_decode_status;
   size_t length_offset=tag.encoded_size+DER_LENGTH_INITIAL_OCTETS;
   size_t header_len=length_offset+encoded_length_size;
   if(value_len>size-header_len)
@@ -159,6 +165,7 @@ decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,de
   out->value_len=value_len;
   out->value=out->value_len>0?buf+header_len:NULL;
   out->header_len=header_len;
+  out->encoded_size=header_len+value_len;
   out->start=buf;
   return DECODE_DER_ELEMENT_STATUS_OK;
 }
@@ -169,8 +176,6 @@ static der_element_node_t* der_element_node_create(der_element_t element)
   if(node==NULL)
     return NULL;
   node->element=element;
-  node->capacity=0;
-  node->count=0;
   return node;
 }
 
@@ -181,14 +186,14 @@ static bool der_element_node_add_child(der_element_node_t *parent, der_element_n
     if(parent->capacity==0)
       new_capacity=DER_NODE_INITIAL_CAPACITY;
     else {
-      if(parent->capacity<(SIZE_MAX/2))
+      if(parent->capacity<=(SIZE_MAX/2))
         new_capacity=parent->capacity*2;
       else
         return false;
     }
     der_element_node_t **tmp=NULL;
-    if(new_capacity<(SIZE_MAX/sizeof(der_element_node_t*)))
-      tmp=realloc(parent->children,sizeof(der_element_node_t*)*new_capacity);
+    if(new_capacity<=(SIZE_MAX/sizeof(*parent->children)))
+      tmp=realloc(parent->children,sizeof(*parent->children)*new_capacity);
     else
       return false;
     if(tmp==NULL)
@@ -196,40 +201,56 @@ static bool der_element_node_add_child(der_element_node_t *parent, der_element_n
     parent->children=tmp;
     parent->capacity=new_capacity;
   }
-  size_t cnt=parent->count;
-  parent->children[cnt]=child;
-  parent->count+=1;
+  parent->children[parent->count]=child;
+  parent->count++;
   return true;
 }
 
-
-//TODO:check child length cannot be greater than parent length
 der_element_node_t* der_element_tree_build(der_element_t element)
 {
   der_element_node_t* node=der_element_node_create(element);
   if(node==NULL)
     return NULL;
-  size_t len=element.value_len;
-  const uint8_t *value_ptr = element.value;
-  if (element.tag.type == CONSTRUCTED) {
-    while(value_ptr!=NULL && value_ptr < element.value+element.value_len-1) {
+  if (element.tag.type == PRIMITIVE) 
+    return node;
+  else if (element.tag.type == CONSTRUCTED) {
+    const uint8_t *value_ptr = element.value;
+    size_t remaining= element.value_len;
+    while(remaining>0) {
       der_element_t child = {0};
-      decode_der_element_status_t parse_result= der_element_decode(value_ptr,len,&child);
-      if(parse_result!=DECODE_DER_ELEMENT_STATUS_OK) {
+      decode_der_element_status_t decode_result= der_element_decode(value_ptr,remaining,&child);
+      if(decode_result!=DECODE_DER_ELEMENT_STATUS_OK) {
+        der_element_tree_destroy(node);
         return NULL;
       }
-      der_element_node_t* childNode=der_element_tree_build(child);
-      if(childNode==NULL) {
+      der_element_node_t* child_node=der_element_tree_build(child);
+      if(child_node==NULL) {
+        der_element_tree_destroy(node);
         return NULL;
       }
-      bool add_child_res=der_element_node_add_child(node,childNode);
-      if(add_child_res==false)
+      bool add_child_res=der_element_node_add_child(node,child_node);
+      if(add_child_res==false){
+        der_element_tree_destroy(child_node);
+        der_element_tree_destroy(node);
         return NULL;
-      if(childNode->element.value==NULL && childNode->element.value_len==0)
-        value_ptr=value_ptr+2;
-      else
-        value_ptr=childNode->element.value+childNode->element.value_len;
+      }
+      value_ptr+=child_node->element.encoded_size;
+      remaining-=(child_node->element.encoded_size);
     }
-  } 
-  return node;
+    return node;
+  } else{
+    der_element_tree_destroy(node);
+    return NULL;
+  }
+}
+
+void der_element_tree_destroy(der_element_node_t *node)
+{
+  if(node==NULL)
+    return;
+  for(size_t i=0; i<node->count; i++){
+    der_element_tree_destroy(node->children[i]);
+  }
+  free(node->children);
+  free(node);
 }

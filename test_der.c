@@ -558,7 +558,7 @@ static void test_build_tlv_constructed(void)
 
 static void test_build_tlv_rsa_encryption(void)
 {
-  uint8_t buf[] = {0x30,0x13,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,0x03,0x01,0x00,0x00};
+  uint8_t buf[] = {0x30,0x12,0x30,0x0D,0x06,0x09,0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x01,0x05,0x00,0x03,0x01,0x00};
 
   der_element_t actual = {0};
   decode_der_element_status_t parse_result= der_element_decode(buf, ARRAY_LEN(buf),&actual);
@@ -568,7 +568,7 @@ static void test_build_tlv_rsa_encryption(void)
   TEST_ASSERT_EQUAL_INT(root->element.tag.class, UNIVERSAL);
   TEST_ASSERT_EQUAL_INT(root->element.tag.type, CONSTRUCTED);
   TEST_ASSERT_EQUAL_INT(root->element.tag.number, SEQUENCE);
-  TEST_ASSERT_EQUAL_INT(root->element.value_len, 19);
+  TEST_ASSERT_EQUAL_INT(root->element.value_len, 18);
   TEST_ASSERT_EQUAL_INT(root->element.header_len, 2);
   TEST_ASSERT_EQUAL_PTR(root->element.value, (buf + 2));
   TEST_ASSERT_EQUAL_PTR(root->element.start, (buf + 0));

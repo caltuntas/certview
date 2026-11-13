@@ -83,6 +83,7 @@ typedef struct {
   tag_t tag;
   size_t value_len;
   size_t header_len;
+  size_t encoded_size;
   const uint8_t *start;
   const uint8_t *value;
 } der_element_t;
@@ -97,6 +98,7 @@ typedef struct der_element_node_t {
 
 decode_der_element_status_t der_element_decode(const uint8_t *buf,size_t size,der_element_t *out);
 der_element_node_t* der_element_tree_build(der_element_t element);
+void der_element_tree_destroy(der_element_node_t *node);
 void print_der_element_node(der_element_node_t *node,int indent);
 void print_data(const uint8_t *data,size_t len);
 
