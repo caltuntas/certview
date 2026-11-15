@@ -19,39 +19,6 @@ enum {
   DER_NODE_INITIAL_CAPACITY=16,
 };
 
-void print_data(const uint8_t *data,size_t len)
-{
-  for (size_t i=0;i<len; i++) {
-    printf("%02X,",data[i]);
-  }
-  printf("\n");
-}
-
-void print_der_element_node(der_element_node_t *node,int indent) 
-{
-  const char *tag_number_str=tag_number_t_toString(node->element.tag.number);
-  char str[20]={0};
-  if(node->element.tag.class==CONTEXT_SPECIFIC){
-    sprintf(str,"[%d]",node->element.tag.number);
-    tag_number_str=str;
-  } 
-  const char *type_str=type_t_toString(node->element.tag.type);
-  printf("%*s %s(%s,len=%zu):",indent,"",tag_number_str,type_str,node->element.value_len);
-  if (node->count <= 0) {
-    for(size_t i=0; i<node->element.value_len; i++) {
-      printf("%02X,",*(node->element.value+i));
-    }
-  } else {
-    for(size_t i=node->element.header_len+2; i>0; i--) {
-      printf("%02X,",*(node->element.value-i));
-    }
-  }
-  printf("\n");
-  for(size_t i=0; i<node->count; i++){
-    print_der_element_node(node->children[i],indent+1);
-  }
-}
-
 static unsigned count_bits(uint32_t n) 
 {
   if(n==0)
@@ -206,6 +173,7 @@ static bool der_element_node_add_child(der_element_node_t *parent, der_element_n
   return true;
 }
 
+//TODO:recursive function should have a max depth, otherwise it can be exploited 
 der_element_node_t* der_element_tree_build(der_element_t element)
 {
   der_element_node_t* node=der_element_node_create(element);

@@ -4,6 +4,7 @@
 #include <string.h>
 #include "asn1.h"
 #include "der.h"
+#include "der_view.h"
 #define ARRAY_LEN(arr) (sizeof(arr)/sizeof(arr[0]))
 #define CASE(result,...) {(uint8_t[]){__VA_ARGS__}, sizeof((uint8_t[]){__VA_ARGS__}), result}
 
@@ -477,7 +478,7 @@ static void test_validate_explicit_sequence(void)
     bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
-      print_der_element_node(root,0);
+      der_print_element_tree(root);
     }
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
@@ -567,7 +568,7 @@ static void test_validate_choice()
     bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
-      print_der_element_node(root,0);
+      der_print_element_tree(root);
     }
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }
@@ -650,7 +651,7 @@ static void test_validate_nested_fields()
     bool is_valid=validate_schema(&parent_field,root,&out);
     if(is_valid!=tc.result){
       print_field(&parent_field,0);
-      print_der_element_node(root,0);
+      der_print_element_tree(root);
     }
     TEST_ASSERT_EQUAL_MESSAGE(tc.result,is_valid,msg);
   }

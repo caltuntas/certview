@@ -88,15 +88,6 @@ typedef struct {
 } test_case_convert_to_int;
 
 
-void print_data(uint8_t *data,size_t len)
-{
-  for (int i=0;i<len; i++) {
-    printf("%02X,",data[i]);
-  }
-  printf("\n");
-}
-
-
 void setUp(void)
 {
 }

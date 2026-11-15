@@ -4,6 +4,7 @@
 #include "asn1.h"
 #include "bigint.h"
 #include "oid.h"
+#include "der_view.h"
 
 field_t *x509_general_names_definition();
 field_t *x509_general_name_definition();
@@ -529,7 +530,7 @@ field_t* create_x509_definition()
   ECParameters ::= CHOICE {
        namedCurve         OBJECT IDENTIFIER
        -- implicitCurve   NULL
-       -- specifiedCurve  SpecifiedECDomain
+       -- specifiedCurve  SpecifiedEder_print_hexmain
   }
   */
   field_t *ai_parameters =create_field();
@@ -767,10 +768,10 @@ void print_debug(bool valid, const uint8_t *data,size_t data_len,der_element_nod
   print_field(field,0);
   printf("\n");
   printf("---Raw Data---\n");
-  print_data(data,data_len);
+  der_print_hex(data,data_len);
   printf("\n");
   printf("---Parsed Der---\n");
-  print_der_element_node(node,0);
+  der_print_element_tree(node);
   if(valid){
     printf("\n");
     printf("---Mapped Values---\n");
